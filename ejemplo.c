@@ -1,5 +1,6 @@
 /*----------------------------------------------------------------------------- 
  *
+ *   Creado por Inaki García
  *   prodcons.c 
  *
  *   gcc -o prodcons prodcons.c -pthread
