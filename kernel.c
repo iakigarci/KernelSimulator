@@ -9,6 +9,8 @@
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
 #define WAITING_TO_EXIT 30
+#define NUM_CPU 		1
+#define NUM_CORE		2
 
 typedef struct { 
   int i; 
@@ -22,15 +24,28 @@ struct parametros {
 
 struct PCB {
 	int id;
+	int t;
 }; 
 
-typedef struct {
+typedef struct
+{
    struct PCB dat[BUFFER_MAX];
    int r;
    int w;
    int size;
 } buffer_d;
 
+typedef struct
+{
+   identif_t arr_th[MAXTHREAD];
+} core;
+
+typedef struct
+{
+   core arr_core[NUM_CORE]
+} CPU;
+
+struct CPU arr_cpu[NUM_CPU];
 buffer_d buffer;
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
@@ -98,7 +113,7 @@ void inicializar() {
    sem_init(&sem_cola, 0, 0);
 
    clockTime=0;
-   /* buffer */
+   /* buffer de PCB */
    int i;
    buffer.r = 0;
    buffer.w = 0;
