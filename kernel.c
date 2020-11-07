@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>    // srand, rand,...
 #include <time.h>      // time 
+#include <stdbool.h>
 
 #define MAXTHREAD       8
 #define DELAY_TIMER     5
@@ -22,7 +23,8 @@ struct parametros {
 	int frec;
 };
 
-struct PCB {
+/** ESTRUCTURAS CPU **/
+typedef struct PCB {
 	int id;
 	int t;
 }; 
@@ -37,15 +39,23 @@ typedef struct
 
 typedef struct
 {
-   identif_t arr_th[MAXTHREAD];
-} core;
+	_Bool is_process;
+	struct PCB t_pcb;
+} c_thread;
 
 typedef struct
 {
-   core arr_core[NUM_CORE]
-} CPU;
+   identif_t arr_th[MAXTHREAD];
+} core;
 
-struct CPU arr_cpu[NUM_CPU];
+struct cpu
+{
+   core arr_core[NUM_CORE];
+   identif_t scheduler;
+};
+
+/** ---------------- **/
+
 buffer_d buffer;
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
@@ -71,8 +81,11 @@ int mensaje_error(char *s);
 	3	processFrec
 */
 int main(int argc, char *argv[]) {
+	//	Inicialización de estructuras	
 	identif_t idtimer, idclock, idscheduler, idprocessgenerator;
+	struct cpu arr_cpu[NUM_CPU];
 
+	//	Control de parametros de entrada
 	if (argc != 4)
 	{
 		mensaje_error("Los parametros sos: ./scritp frecuenciaClock frecuenciaTimer frecuenciaProcessGen");
@@ -84,20 +97,31 @@ int main(int argc, char *argv[]) {
 
 	inicializar();
 
+	//	Inicializacion de los parámetros que van a tener los hilos
 	p1.tid=idclock.tid;
 	p1.frec=atoi(argv[1]);
 	p2.tid=idtimer.tid;
 	p2.frec=atoi(argv[2]);
 	p3.tid=idprocessgenerator.tid;
 	p3.frec=atoi(argv[3]);
-	p4.tid=idscheduler.tid;
+
 	printf("Comienza el programa\n");
+
+	//	Se crean los hilos necesarios para todo el sistema
 	//pthread_create(&(idHilo),atributosHilo,funcion, parametroVoid)
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timer,(void *)&p2);
 	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
-	pthread_create(&(idscheduler.tid),NULL,scheduler,(void *)&p4);
 
+	// 	Se introducen los scheduler por cpu
+	int i;
+	for(i = 0; i < NUM_CPU; i++) {
+		identif_t idscheduler;
+		pthread_create(&(idscheduler.tid),NULL,scheduler,NULL);
+		arr_cpu[i].scheduler = idscheduler;
+	}
+
+	inicializar();
 	sleep(WAITING_TO_EXIT);
 	printf("Fin\n");
     return(0);
@@ -122,9 +146,6 @@ void inicializar() {
    for(i = 0; i < BUFFER_MAX; i++) buffer.dat[i] = pcb;
 } // inicializar
 
-/*----------------------------------------------------------------- 
- *   clock
- *----------------------------------------------------------------*/
 
 void *kernelClock(void *arg) {
 	struct parametros *p;
@@ -200,7 +221,7 @@ void *scheduler(void *arg) {
 	struct parametros *p;
 	p = (struct parametros *)arg;
 	int id = p -> tid;
-	printf("  Soy un Scheduler con número [%d] \n", id);
+	printf("Soy un Scheduler con número [%d] \n", id);
 }
 /*----------------------------------------------------------------- 
  *   meter un elemento al buffer
