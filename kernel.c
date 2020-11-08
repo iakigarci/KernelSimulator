@@ -53,7 +53,7 @@ struct cpu
 };
 
 /** ---------------- **/
-struct Queue queue0,queue1,queue2,queue3;
+struct Queue *queue0,*queue1,*queue2,*queue3;
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
 int clockTime;
@@ -64,7 +64,6 @@ void *processGenerator(void *arg);
 void *scheduler(void *arg); 
 
 void inicializar();
-int meter_elem(struct PCB pcb);
 int sacar_elem(struct PCB *pcb);
 int mensaje_error(char *s);
 
@@ -80,7 +79,7 @@ int mensaje_error(char *s);
 int main(int argc, char *argv[]) {
 	
 	//	Inicialización de estructuras	
-	identif_t idtimer, idclock, idscheduler, idprocessgenerator;
+	identif_t idtimer, idclock, idprocessgenerator;
 	struct cpu arr_cpu[NUM_CPU];
 
 	//	Control de parametros de entrada
@@ -110,7 +109,6 @@ int main(int argc, char *argv[]) {
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timer,(void *)&p2);
 	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
-	pthread_create(&(idscheduler.tid),NULL,scheduler,NULL);
 
 	inicializar();
 	sleep(WAITING_TO_EXIT);
@@ -156,8 +154,6 @@ void *kernelClock(void *arg) {
 	}
 }
 
-
-
 /*----------------------------------------------------------------- 
  *   timer
  *----------------------------------------------------------------*/
@@ -171,8 +167,11 @@ void *timer(void *arg) {
 		pthread_mutex_lock(&mutexC);
 		if (clockTime>=frec)
 		{
+			identif_t idscheduler;
 			clockTime=0;
 			printf("  TIMER[%d] avisa\n", id);
+			pthread_create(&(idscheduler.tid),NULL,scheduler,NULL);
+			pthread_exit()
 		}
 		pthread_mutex_unlock(&mutexC);	
 	}
@@ -191,14 +190,27 @@ void *processGenerator(void *arg) {
 	while(1) {
 		sleep(frec);
 		pcb.id=i;
+		pcb.prioridad = rand() % (3+1-0) + 0;
 		//sem_wait(&sem_cola);
 		pthread_mutex_lock(&mutex);
-		if (meter_elem(pcb)) {
-            printf("  Process Generator[%d] produce %02d\n", id, pcb.id);
-        }
-        else {
-            mensaje_error("Buffer lleno");
-        }
+		switch (pcb.prioridad)
+		{
+		case 0:
+			enqueue(queue0,pcb);
+			break;
+		case 1:
+			enqueue(queue1,pcb);
+			break;
+		case 2:
+			enqueue(queue2,pcb);
+			break;
+		case 3:
+			enqueue(queue3,pcb);
+			break;
+		default:
+			break;
+		} 
+        printf("  Process Generator[%d] produce %02d\n", id, pcb.id);
 		pthread_mutex_unlock(&mutex);
 		//sem_post(&sem_cola);
 		i++;	
@@ -206,13 +218,20 @@ void *processGenerator(void *arg) {
 }
 
 /*----------------------------------------------------------------- 
- *   process generator
+ *   scheduler
  *----------------------------------------------------------------*/
-void *scheduler(void *arg) {
+void *schedulerTiempo(void *arg) {
 	struct parametros *p;
 	p = (struct parametros *)arg;
 	int id = p -> tid;
 	printf("Soy un Scheduler con número [%d] \n", id);
+}
+void *schedulerEvento(void *arg) {
+	struct parametros *p;
+	p = (struct parametros *)arg;
+	int id = p -> tid;
+	printf("Soy un Scheduler con número [%d] \n", id);
+
 }
 /*----------------------------------------------------------------- 
  *   Queue
