@@ -225,12 +225,35 @@ void *schedulerTiempo(void *arg) {
 	p = (struct parametros *)arg;
 	int id = p -> tid;
 	printf("Soy un Scheduler con número [%d] \n", id);
+	pthread_mutex_lock(&mutex);
+	int seguir = 1;
+	while (seguir)
+	{
+		if (isEmpty(queue0))
+		{
+			if (isEmpty(queue1))
+			{
+				if (isEmpty(queue2))
+				{
+					if (isEmpty(queue3))
+					{
+						seguir=0;
+					}else{dequeue(queue3);}
+				}else{dequeue(queue2);}
+			}else{dequeue(queue1);}
+		}else{asignarPCB(dequeue(queue0));}
+	}
+	pthread_mutex_unlock(&mutex);
 }
 void *schedulerEvento(void *arg) {
 	struct parametros *p;
 	p = (struct parametros *)arg;
 	int id = p -> tid;
 	printf("Soy un Scheduler con número [%d] \n", id);
+
+}
+
+void asignarPCB(struct PCB* pcb) {
 
 }
 /*----------------------------------------------------------------- 
@@ -277,7 +300,7 @@ void enqueue(struct Queue* queue, struct PCB pcb)
 struct PCB dequeue(struct Queue* queue) 
 { 
     if (isEmpty(queue)) {
-		struct PCB pcbNulo;
+		struct PCB pcbNulo; 
 		pcbNulo.quantum=0;
 		return pcbNulo;
 	} 
