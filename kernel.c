@@ -2,8 +2,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
-#include <stdlib.h>    // srand, rand,...
-#include <time.h>      // time 
+#include <stdlib.h>   
+#include <time.h>    
 #include <stdbool.h>
 #include <limits.h> 
 
@@ -178,6 +178,9 @@ void *timer(void *arg) {
 			{
 				priorityTime=0;
 				aumentarPrioridad();
+				if(todosHilosOcupados()) {
+					scheduler_flag = event;
+				}
 			}
 			
 		}
@@ -285,11 +288,11 @@ void *schedulerEvento(struct core_thread c_thread) {
 void asignarPCB(struct PCB pcb) {
 	int i,j,k;
 	bool salir;
-	while (i < NUM_CPU && !salir)
+	while (i < NUM_CPU)
 	{
-		while (j < NUM_CORE && !salir)
+		while (j < NUM_CORE)
 		{
-			while (k < MAXTHREAD && !salir)
+			while (k < MAXTHREAD)
 			{
 				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) {
 					k++;
@@ -322,7 +325,6 @@ void decrementarQ_PCB(struct core_thread c_thread) {
 		struct core_thread* c_ptr, c_thread;
 		pthread_create(&(idscheduler.tid),NULL,schedulerEvento,c_ptr);
 	}
-	
 }
 
 void aumentarPrioridad() { 
@@ -343,6 +345,28 @@ void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2) {
 			enqueue(pQueue2,dequeue(pQueue1));
 		}else{ seguir=false; }
 	}
+}
+/**
+ * 0	False
+ * 1	True
+**/
+int todosHilosOcupados() {
+	int i,j,k;
+	while (i < NUM_CPU)
+	{
+		while (j < NUM_CORE)
+		{
+			while (k < MAXTHREAD)
+			{
+				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) {
+					k++;
+				}else{
+					return 0;
+				}
+			}j++;
+		}i++;
+	}
+	return 1;
 }
 /*----------------------------------------------------------------- 
  *   Queue
