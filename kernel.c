@@ -59,7 +59,7 @@ struct cpu arr_cpu[NUM_CPU];
 struct Queue *queue0,*queue1,*queue2,*queue3;
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
-int clockTime;
+int clockTime, priorityTime;
 
 void *kernelClock(void *arg); 
 void *timer(void *arg); 
@@ -171,9 +171,15 @@ void *timer(void *arg) {
 		{
 			identif_t idscheduler;
 			clockTime=0;
+			priorityTime++;
 			printf("  TIMER[%d] avisa\n", id);
 			pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
-			pthread_exit()
+			if (priorityTime>=10)
+			{
+				priorityTime=0;
+				aumentarPrioridad();
+			}
+			
 		}
 		pthread_mutex_unlock(&mutexC);	
 	}
@@ -228,7 +234,7 @@ void *schedulerTiempo(void *arg) {
 	int id = p -> tid;
 	printf("Soy un Scheduler por tiempo con número [%d] \n", id);
 	pthread_mutex_lock(&mutex);
-	int seguir = 1;
+	bool seguir;
 	while (seguir)
 	{
 		if (isEmpty(queue0))
@@ -239,7 +245,7 @@ void *schedulerTiempo(void *arg) {
 				{
 					if (isEmpty(queue3))
 					{
-						seguir=0;
+						seguir=false;
 					}else{asignarPCB(dequeue(queue3));}
 				}else{asignarPCB(dequeue(queue2));}
 			}else{asignarPCB(dequeue(queue1));}
@@ -247,8 +253,33 @@ void *schedulerTiempo(void *arg) {
 	}
 	pthread_mutex_unlock(&mutex);
 }
+
 void *schedulerEvento(struct core_thread c_thread) {
-	
+	pthread_mutex_lock(&mutex);
+	bool seguir;
+	struct PCB pcb; 
+	while (seguir)
+	{
+		if (isEmpty(queue0))
+		{
+			if (isEmpty(queue1))
+			{
+				if (isEmpty(queue2))
+				{
+					if (isEmpty(queue3))
+					{
+						seguir=false;
+					}else{pcb = dequeue(queue3);}
+				}else{pcb = dequeue(queue2);}
+			}else{pcb = dequeue(queue1);}
+		}else{pcb = dequeue(queue0);}
+	}
+	pthread_mutex_unlock(&mutex);
+	if (!seguir)
+	{
+		c_thread.t_pcb=pcb;
+		c_thread.is_process=true;
+	}
 }
 
 void asignarPCB(struct PCB pcb) {
@@ -267,10 +298,8 @@ void asignarPCB(struct PCB pcb) {
 					decrementarQ_PCB(arr_cpu[i].arr_core[j].arr_th[k]);
 					salir = true;
 				}
-			}
-			j++;
-		}
-		i++;
+			}j++;
+		}i++;
 	}
 	if (!salir){
 		asignarPCB(pcb);
@@ -296,6 +325,25 @@ void decrementarQ_PCB(struct core_thread c_thread) {
 	
 }
 
+void aumentarPrioridad() { 
+	subirPrioridadColas(queue1,queue0);
+	subirPrioridadColas(queue2,queue1);
+	subirPrioridadColas(queue3,queue2);
+}
+
+/**
+ * Sube cola 1 a cola 2
+**/
+void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2) {
+	bool seguir;
+	while (seguir)
+	{
+		if (!isEmpty(pQueue1))
+		{
+			enqueue(pQueue2,dequeue(pQueue1));
+		}else{ seguir=false; }
+	}
+}
 /*----------------------------------------------------------------- 
  *   Queue
  *----------------------------------------------------------------*/
