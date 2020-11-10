@@ -7,12 +7,12 @@
 #include <stdbool.h>
 #include <limits.h> 
 
-#define MAXTHREAD       8
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 30
-#define NUM_CPU 		1
+#define WAITING_TO_EXIT 8
+#define NUM_CPU 		2
 #define NUM_CORE		2
+#define MAXTHREAD       5
 
 typedef struct { 
   pthread_t tid; 
@@ -83,7 +83,7 @@ void decrementarQ_PCB(struct core_thread c_thread);
 void aumentarPrioridad();
 void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2);
 int todosHilosOcupados();
-
+void imprimirEstructura();
 
 /*----------------------------------------------------------------- 
  *   main
@@ -120,7 +120,6 @@ int main(int argc, char *argv[]) {
 	p3.frec=atoi(argv[3]);
 
 	printf("Comienza el programa V.2\n");
-	inicializar();
 	//	Se crean los hilos necesarios para todo el sistema
 	// pthread_create(&(idHilo),atributosHilo,funcion, parametroVoid)
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
@@ -128,7 +127,8 @@ int main(int argc, char *argv[]) {
 	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
 
 	sleep(WAITING_TO_EXIT);
-	printf("Fin\n");
+	printf("Finn\n");
+	imprimirEstructura();
 	return(0);
 }
 
@@ -146,6 +146,23 @@ void inicializar() {
    queue1_ptr = createQueue();
    queue2_ptr = createQueue();
    queue3_ptr = createQueue();
+
+    // int i = 0;
+	// int j = 0;
+	// int k = 0;
+	// struct PCB pcb;
+	// while (i < NUM_CPU)
+	// {
+	// 	while (j < NUM_CORE)
+	// 	{
+	// 		while (k < MAXTHREAD)
+	// 		{
+	// 			arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pcb;
+	// 			k++;
+	// 		} j++;
+	// 	} i++;
+	// }
+
 } // inicializar
 
 /*----------------------------------------------------------------- 
@@ -166,7 +183,7 @@ void *kernelClock(void *arg) {
 			count=0;
 			pthread_mutex_lock(&mutexC);
 			clockTime++;
-			printf("  CLOCK[%d] \n", clockTime);
+			//printf("  CLOCK[%d] \n", clockTime);
 			pthread_mutex_unlock(&mutexC);	
 		}
 	}
@@ -182,9 +199,8 @@ void *timerScheduler(void *arg) {
 	int id = p.tid;
 	int frec = p.frec;
 	while(1) {
-		sleep(1000);
 		pthread_mutex_lock(&mutexC);
-		if (clockTime>=frec)
+		if (clockTime>=10)
 		{
 			identif_t idscheduler;
 			clockTime=0;
@@ -219,7 +235,7 @@ void *processGenerator(void *arg) {
 		sleep(frec);
 		pcb.id=i;
 		pcb.prioridad = rand() % (3+1-0) + 0;
-		pcb.quantum = rand() % (1000+1-1) + 1;
+		pcb.quantum = rand() % (1000+1-10) + 10;
 		//sem_wait(&sem_cola);
 		pthread_mutex_lock(&mutex);
 		switch (pcb.prioridad)
@@ -239,7 +255,7 @@ void *processGenerator(void *arg) {
 		default:
 			break;
 		} 
-		printf("  Process Generator[%d] produce %02d\n", id, pcb.id);
+		//printf("  Process Generator[%d] produce %02d %03d\n", id, pcb.id,pcb.quantum);
 		pthread_mutex_unlock(&mutex);
 		//sem_post(&sem_cola);
 		i++;	
@@ -256,28 +272,27 @@ void *schedulerTiempo(void *arg) {
 	int frec = p.frec;
 	printf("Soy un Scheduler por tiempo con número [%d] \n", id);
 	pthread_mutex_lock(&mutex);
-	bool seguir;
-	while (seguir)
+	bool seguir=true;
+
+	if (isEmpty(queue0_ptr))
 	{
-		if (isEmpty(queue0_ptr))
+		if (isEmpty(queue1_ptr))
 		{
-			if (isEmpty(queue1_ptr))
+			if (isEmpty(queue2_ptr))
 			{
-				if (isEmpty(queue2_ptr))
+				if (isEmpty(queue3_ptr))
 				{
-					if (isEmpty(queue3_ptr))
-					{
-						seguir=false;
-					}else{asignarPCB(dequeue(queue3_ptr));}
-				}else{asignarPCB(dequeue(queue2_ptr));}
-			}else{asignarPCB(dequeue(queue1_ptr));}
-		}else{asignarPCB(dequeue(queue0_ptr));}
-	}
+					seguir=false;
+				}else{asignarPCB(dequeue(queue3_ptr));}
+			}else{asignarPCB(dequeue(queue2_ptr));}
+		}else{asignarPCB(dequeue(queue1_ptr));}
+	}else{asignarPCB(dequeue(queue0_ptr));}
+	
 	pthread_mutex_unlock(&mutex);
 }
 
 void *schedulerEvento(void *c_ptr) {
-	bool seguir;
+	bool seguir=true;
 	struct PCB pcb; 
 	pthread_mutex_lock(&mutex);
 	while (seguir)
@@ -297,7 +312,7 @@ void *schedulerEvento(void *c_ptr) {
 		}else{pcb = dequeue(queue0_ptr);}
 	}
 	pthread_mutex_unlock(&mutex);
-	if (!seguir)
+	if (seguir)
 	{
 		struct core_thread *c_ptrAux = (struct core_thread*)c_ptr;
 		c_ptrAux->t_pcb=pcb;
@@ -305,27 +320,66 @@ void *schedulerEvento(void *c_ptr) {
 	}
 }
 
-void asignarPCB(struct PCB pcb) {
-	int i,j,k;
-	bool salir;
-	while (i < NUM_CPU)
+void asignarPCB(struct PCB pPcb) {
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	bool seguir = true;
+	while (i < NUM_CPU && seguir)
 	{
-		while (j < NUM_CORE)
+		while (j < NUM_CORE && seguir)
 		{
-			while (k < MAXTHREAD)
+			while (k < MAXTHREAD && seguir)
 			{
-				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) {
+				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) { // Se mira si hay proceso
 					k++;
 				}else{
-					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pcb;
-					decrementarQ_PCB(arr_cpu[i].arr_core[j].arr_th[k]);
-					salir = true;
+					printf("metido [%d] prioridad [%d] en [%d][%d][%d]",pPcb.id,pPcb.prioridad, i,j,k);
+					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pPcb;
+					seguir = false;
+					arr_cpu[i].arr_core[j].arr_th[k].is_process = true;
+					//decrementarQ_PCB(arr_cpu[i].arr_core[j].arr_th[k]);
 				}
-			}j++;
-		}i++;
+			}
+			k=0;
+			j++;
+		}
+		j=0;
+		k=0;
+		i++;
 	}
-	if (!salir){
-		asignarPCB(pcb);
+	if (seguir){
+		asignarPCB(pPcb);
+	}
+}
+
+void imprimirEstructura() {
+	printf("Estructura \n");
+	printf("Número de CPU [%d] \n", NUM_CPU);
+	printf("Número de CORE [%d] \n", NUM_CORE);
+	printf("Número de thread [%d] \n", MAXTHREAD);
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	while (i < NUM_CPU)
+	{
+		printf("CPU [%d] \n", i);
+		while (j < NUM_CORE)
+		{
+			printf("\t CORE [%d] \n", j);
+			while (k < MAXTHREAD)
+			{
+				printf("\t \t T [%d]", k);
+				printf("\t \t  PCB [%d]|[%d]|[%d] ", arr_cpu[i].arr_core[j].arr_th[k].t_pcb.id,arr_cpu[i].arr_core[j].arr_th[k].t_pcb.prioridad,arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum);
+				printf("\n");
+				k++;
+			}
+			k=0;
+			j++;
+		} 
+		j=0;
+		k=0;
+		i++;
 	}
 }
 
@@ -383,8 +437,13 @@ int todosHilosOcupados() {
 				}else{
 					return 0;
 				}
-			}j++;
-		}i++;
+			}
+			k=0;
+			j++;
+		}
+		j=0;
+		k=0;
+		i++;
 	}
 	return 1;
 }
