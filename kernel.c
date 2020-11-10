@@ -15,7 +15,6 @@
 #define NUM_CORE		2
 
 typedef struct { 
-  struct PCB; 
   pthread_t tid; 
 } identif_t; 
 
@@ -31,7 +30,7 @@ typedef struct PCB {
 	int id;
 	int quantum;
 	int prioridad; // 0..3
-}; 
+}PCB; 
 
 struct Queue { 
 	int front, rear, size; 
@@ -62,12 +61,25 @@ sem_t sem_cola;
 int clockTime, priorityTime;
 
 void *kernelClock(void *arg); 
-void *timer(void *arg); 
+void *timerScheduler(void *arg); 
 void *processGenerator(void *arg); 
-void *scheduler(void *arg); 
-
+void *schedulerTiempo(void *arg); 
+void *schedulerEvento(struct core_thread c_thread);
+struct Queue* createQueue() ;
+int isFull(struct Queue* queue);
+int isEmpty(struct Queue* queue) ;
+struct PCB front(struct Queue* queue) ;
+struct PCB rear(struct Queue* queue) ;
+void enqueue(struct Queue* queue, struct PCB pcb) ;
+struct PCB dequeue(struct Queue* queue);
 void inicializar();
 int mensaje_error(char *s);
+void asignarPCB(struct PCB pcb);
+void decrementarQ_PCB(struct core_thread c_thread);
+void aumentarPrioridad();
+void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2);
+int todosHilosOcupados();
+
 
 /*----------------------------------------------------------------- 
  *   main
@@ -104,12 +116,12 @@ int main(int argc, char *argv[]) {
 	p3.tid=idprocessgenerator.tid;
 	p3.frec=atoi(argv[3]);
 
-	printf("Comienza el programa\n");
+	printf("Comienza el programa V.2\n");
 
 	//	Se crean los hilos necesarios para todo el sistema
 	//pthread_create(&(idHilo),atributosHilo,funcion, parametroVoid)
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
-	pthread_create(&(idtimer.tid),NULL,timer,(void *)&p2);
+	pthread_create(&(idtimer.tid),NULL,timerScheduler,(void *)&p2);
 	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
 
 	inicializar();
@@ -160,7 +172,7 @@ void *kernelClock(void *arg) {
  *   timer
  *----------------------------------------------------------------*/
 
-void *timer(void *arg) {
+void *timerScheduler(void *arg) {
 	struct parametros *p;
 	p = (struct parametros *)arg;
 	int id = p -> tid;
