@@ -55,8 +55,10 @@ typedef struct cpu
 
 /** ---------------- **/
 struct cpu arr_cpu[NUM_CPU];
-struct Queue *queue1,*queue2,*queue3;
 struct Queue *queue0_ptr, queue0;
+struct Queue *queue1_ptr, queue1;
+struct Queue *queue2_ptr, queue2;
+struct Queue *queue3_ptr, queue3;
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
 int clockTime, priorityTime;
@@ -141,9 +143,9 @@ void inicializar() {
 
    clockTime=0;
    queue0_ptr = createQueue();
-   struct Queue* queue1 = createQueue();
-   struct Queue* queue2 = createQueue();
-   struct Queue* queue3 = createQueue();
+   queue1_ptr = createQueue();
+   queue2_ptr = createQueue();
+   queue3_ptr = createQueue();
 } // inicializar
 
 /*----------------------------------------------------------------- 
@@ -226,13 +228,13 @@ void *processGenerator(void *arg) {
 			enqueue(queue0_ptr,pcb);
 			break;
 		case 1:
-			enqueue(queue1,pcb);
+			enqueue(queue1_ptr,pcb);
 			break;
 		case 2:
-			enqueue(queue2,pcb);
+			enqueue(queue2_ptr,pcb);
 			break;
 		case 3:
-			enqueue(queue3,pcb);
+			enqueue(queue3_ptr,pcb);
 			break;
 		default:
 			break;
@@ -259,16 +261,16 @@ void *schedulerTiempo(void *arg) {
 	{
 		if (isEmpty(queue0_ptr))
 		{
-			if (isEmpty(queue1))
+			if (isEmpty(queue1_ptr))
 			{
-				if (isEmpty(queue2))
+				if (isEmpty(queue2_ptr))
 				{
-					if (isEmpty(queue3))
+					if (isEmpty(queue3_ptr))
 					{
 						seguir=false;
-					}else{asignarPCB(dequeue(queue3));}
-				}else{asignarPCB(dequeue(queue2));}
-			}else{asignarPCB(dequeue(queue1));}
+					}else{asignarPCB(dequeue(queue3_ptr));}
+				}else{asignarPCB(dequeue(queue2_ptr));}
+			}else{asignarPCB(dequeue(queue1_ptr));}
 		}else{asignarPCB(dequeue(queue0_ptr));}
 	}
 	pthread_mutex_unlock(&mutex);
@@ -282,16 +284,16 @@ void *schedulerEvento(void *c_ptr) {
 	{
 		if (isEmpty(queue0_ptr))
 		{
-			if (isEmpty(queue1))
+			if (isEmpty(queue1_ptr))
 			{
-				if (isEmpty(queue2))
+				if (isEmpty(queue2_ptr))
 				{
-					if (isEmpty(queue3))
+					if (isEmpty(queue3_ptr))
 					{
 						seguir=false;
-					}else{pcb = dequeue(queue3);}
-				}else{pcb = dequeue(queue2);}
-			}else{pcb = dequeue(queue1);}
+					}else{pcb = dequeue(queue3_ptr);}
+				}else{pcb = dequeue(queue2_ptr);}
+			}else{pcb = dequeue(queue1_ptr);}
 		}else{pcb = dequeue(queue0_ptr);}
 	}
 	pthread_mutex_unlock(&mutex);
@@ -346,9 +348,9 @@ void decrementarQ_PCB(struct core_thread c_thread) {
 }
 
 void aumentarPrioridad() { 
-	subirPrioridadColas(queue1,queue0_ptr);
-	subirPrioridadColas(queue2,queue1);
-	subirPrioridadColas(queue3,queue2);
+	subirPrioridadColas(queue1_ptr,queue0_ptr);
+	subirPrioridadColas(queue2_ptr,queue1_ptr);
+	subirPrioridadColas(queue3_ptr,queue2_ptr);
 }
 
 /**
