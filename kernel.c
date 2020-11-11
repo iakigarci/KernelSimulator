@@ -9,7 +9,7 @@
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 8
+#define WAITING_TO_EXIT 30
 #define NUM_CPU 		2
 #define NUM_CORE		2
 #define MAXTHREAD       5
@@ -61,7 +61,7 @@ struct Queue *queue2_ptr, queue2;
 struct Queue *queue3_ptr, queue3;
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
-int clockTime, priorityTime;
+int clockTime, priorityTime, timer_flag;
 
 void *kernelClock(void *arg); 
 void *timerScheduler(void *arg); 
@@ -97,7 +97,7 @@ void imprimirEstructura();
 int main(int argc, char *argv[]) {
 	
 	//	Inicialización de estructuras	
-	identif_t idtimer, idclock, idprocessgenerator;
+	identif_t idtimer, idclock, idprocessgenerator, idscheduler;;
 	
 	//	Control de parametros de entrada
 	if (argc != 4)
@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timerScheduler,(void *)&p2);
 	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
+	pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
 
 	sleep(WAITING_TO_EXIT);
 	printf("Finn\n");
@@ -202,11 +203,10 @@ void *timerScheduler(void *arg) {
 		pthread_mutex_lock(&mutexC);
 		if (clockTime>=10)
 		{
-			identif_t idscheduler;
 			clockTime=0;
 			priorityTime++;
 			printf("  TIMER[%d] avisa\n", id);
-			pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
+			timer_flag=1;
 			if (priorityTime>=10)
 			{
 				priorityTime=0;
@@ -215,7 +215,6 @@ void *timerScheduler(void *arg) {
 					scheduler_flag = event;
 				}
 			}
-			
 		}
 		pthread_mutex_unlock(&mutexC);	
 	}
@@ -235,7 +234,7 @@ void *processGenerator(void *arg) {
 		sleep(frec);
 		pcb.id=i;
 		pcb.prioridad = rand() % (3+1-0) + 0;
-		pcb.quantum = rand() % (1000+1-10) + 10;
+		pcb.quantum = rand() % (10+1-10) + 10;
 		//sem_wait(&sem_cola);
 		pthread_mutex_lock(&mutex);
 		switch (pcb.prioridad)
@@ -270,25 +269,33 @@ void *schedulerTiempo(void *arg) {
 	ptr = (struct parametros *)arg;
 	int id = p.tid;
 	int frec = p.frec;
-	printf("Soy un Scheduler por tiempo con número [%d] \n", id);
-	pthread_mutex_lock(&mutex);
 	bool seguir=true;
-
-	if (isEmpty(queue0_ptr))
+	while (1)
 	{
-		if (isEmpty(queue1_ptr))
+		pthread_mutex_lock(&mutex);
+		if (timer_flag==1)
 		{
-			if (isEmpty(queue2_ptr))
+			printf("Soy un Scheduler por tiempo con número [%d] \n", id);
+			timer_flag=0;
+			while (seguir)
 			{
-				if (isEmpty(queue3_ptr))
+				if (isEmpty(queue0_ptr))
 				{
-					seguir=false;
-				}else{asignarPCB(dequeue(queue3_ptr));}
-			}else{asignarPCB(dequeue(queue2_ptr));}
-		}else{asignarPCB(dequeue(queue1_ptr));}
-	}else{asignarPCB(dequeue(queue0_ptr));}
-	
-	pthread_mutex_unlock(&mutex);
+					if (isEmpty(queue1_ptr))
+					{
+						if (isEmpty(queue2_ptr))
+						{
+							if (isEmpty(queue3_ptr))
+							{
+								seguir=false;
+							}else{asignarPCB(dequeue(queue3_ptr));}
+						}else{asignarPCB(dequeue(queue2_ptr));}
+					}else{asignarPCB(dequeue(queue1_ptr));}
+				}else{asignarPCB(dequeue(queue0_ptr));}
+			}
+		}
+		pthread_mutex_unlock(&mutex);	
+	}
 }
 
 void *schedulerEvento(void *c_ptr) {
@@ -334,7 +341,7 @@ void asignarPCB(struct PCB pPcb) {
 				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) { // Se mira si hay proceso
 					k++;
 				}else{
-					printf("metido [%d] prioridad [%d] en [%d][%d][%d]",pPcb.id,pPcb.prioridad, i,j,k);
+					printf("Metido [%d] prioridad [%d] en [%d][%d][%d]",pPcb.id,pPcb.prioridad, i,j,k);
 					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pPcb;
 					seguir = false;
 					arr_cpu[i].arr_core[j].arr_th[k].is_process = true;
@@ -381,6 +388,10 @@ void imprimirEstructura() {
 		k=0;
 		i++;
 	}
+	printQueue(queue0_ptr);
+	printQueue(queue1_ptr);
+	printQueue(queue2_ptr);
+	printQueue(queue3_ptr);
 }
 
 void decrementarQ_PCB(struct core_thread c_thread) {
@@ -399,6 +410,9 @@ void decrementarQ_PCB(struct core_thread c_thread) {
 		struct core_thread *c_ptr, c_thread;
 		pthread_create(&(idscheduler.tid),NULL,schedulerEvento,(void*) c_ptr);
 	}
+}
+
+void decrementarQ_ListaPCB() {
 }
 
 void aumentarPrioridad() { 
@@ -523,6 +537,18 @@ struct PCB rear(struct Queue* pQueue)
 	return pQueue->arr_pcb[pQueue->rear]; 
 } 
 
+void printQueue(struct Queue* pQueue)
+{
+	printf("Queue");
+	printf("[ \t");
+	struct PCB pcbAux;
+	while (!isEmpty(pQueue))
+	{
+		pcbAux = dequeue(pQueue);
+		printf("[%d]-[%d]-[%d]\t",pcbAux.id,pcbAux.prioridad,pcbAux.quantum);
+	}
+	printf("] \n");
+}
 /*----------------------------------------------------------------- 
  *   mensajes
  *----------------------------------------------------------------*/
