@@ -13,6 +13,7 @@
 #define NUM_CPU 		2
 #define NUM_CORE		2
 #define MAXTHREAD       5
+#define MAX_PCB			100
 
 typedef struct { 
   pthread_t tid; 
@@ -59,6 +60,7 @@ struct Queue *queue0_ptr, queue0;
 struct Queue *queue1_ptr, queue1;
 struct Queue *queue2_ptr, queue2;
 struct Queue *queue3_ptr, queue3;
+struct PCB* array_PCB[MAX_PCB];
 pthread_mutex_t mutex, mutexC;
 sem_t sem_cola;
 int clockTime, priorityTime, timer_flag;
@@ -80,6 +82,7 @@ void inicializar();
 int mensaje_error(char *s);
 void asignarPCB(struct PCB pcb);
 void decrementarQ_PCB(struct core_thread c_thread);
+void decrementarQ_ListaPCB();
 void aumentarPrioridad();
 void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2);
 int todosHilosOcupados();
@@ -140,6 +143,7 @@ int main(int argc, char *argv[]) {
 void inicializar() {
    pthread_mutex_init(&mutex, NULL);
    pthread_mutex_init(&mutexC, NULL);
+   
    //sem_init(&sem_cola, 0, 0);
 
    clockTime=0;
@@ -147,6 +151,7 @@ void inicializar() {
    queue1_ptr = createQueue();
    queue2_ptr = createQueue();
    queue3_ptr = createQueue();
+
 
     // int i = 0;
 	// int j = 0;
@@ -186,6 +191,7 @@ void *kernelClock(void *arg) {
 			clockTime++;
 			//printf("  CLOCK[%d] \n", clockTime);
 			pthread_mutex_unlock(&mutexC);	
+			decrementarQ_ListaPCB();
 		}
 	}
 }
@@ -217,6 +223,7 @@ void *timerScheduler(void *arg) {
 			}
 		}
 		pthread_mutex_unlock(&mutexC);	
+		
 	}
 } 
 /*----------------------------------------------------------------- 
@@ -345,7 +352,7 @@ void asignarPCB(struct PCB pPcb) {
 					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pPcb;
 					seguir = false;
 					arr_cpu[i].arr_core[j].arr_th[k].is_process = true;
-					//decrementarQ_PCB(arr_cpu[i].arr_core[j].arr_th[k]);
+					array_PCB[pPcb.id] = &pPcb;
 				}
 			}
 			k=0;
@@ -413,6 +420,21 @@ void decrementarQ_PCB(struct core_thread c_thread) {
 }
 
 void decrementarQ_ListaPCB() {
+	PCB pcbAux;
+	for (int i = 0; i < MAX_PCB; i++)
+	{
+		PCB* pcb_ptr = array_PCB[i];
+		pcbAux.quantum = pcb_ptr->quantum;
+		if (pcbAux.quantum>0)
+		{
+			pcbAux.id = pcb_ptr->id;
+			pcbAux.prioridad = pcb_ptr->prioridad;
+			pcbAux.quantum = pcb_ptr->quantum-1;
+			array_PCB[i] = &pcb_ptr;
+		}
+		;
+	}
+	
 }
 
 void aumentarPrioridad() { 

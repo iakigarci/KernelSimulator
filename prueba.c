@@ -7,23 +7,21 @@
 #include <stdbool.h>
 #include <limits.h> 
 
-struct s {
-    bool a;
-};
+typedef struct s {
+    int a;
+}s;
 int prueba();
 
 int main(int argc, char *argv[]) {
-    struct s pr;
-    pr.a = true;
-    if (prueba())
-    {
-        printf("Comienza el programa\n");
-    }else {
-        printf("NO Comienza el programa\n");
-    }
-    
-}
+    s* array_s[3];
 
-int prueba() {
-    return 1;
-}
+    struct s sa;
+    sa.a=0;
+    struct s sb;
+    sb.a=22;
+    array_s[1] = &sa; // Meto puntero
+
+    printf("%d\n",array_s[1]->a);
+    array_s[1] = &sb;
+    printf("%d\n",array_s[1]->a);
+ }
