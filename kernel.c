@@ -60,7 +60,7 @@ struct Queue *queue0_ptr, queue0;
 struct Queue *queue1_ptr, queue1;
 struct Queue *queue2_ptr, queue2;
 struct Queue *queue3_ptr, queue3;
-pthread_mutex_t mutex, mutexC, mutexPCB;
+pthread_mutex_t mutexT, mutexC, mutexPCB;
 sem_t sem_cola;
 int clockTime, priorityTime, timer_flag;
 
@@ -89,15 +89,16 @@ void imprimirEstructura();
 
 /*----------------------------------------------------------------- 
  *   main
+ * arg[1]	clockFrec
+ * arg[2]	timerFrec
+ * arg[3]	processFrec
  *----------------------------------------------------------------*/
 
-/*
-	1	clockFrec
-	2	timerFrec
-	3	processFrec
-*/
+
 int main(int argc, char *argv[]) {
 	
+	printf("\n===========================================\n Inicio del programa de la asignatura de SO \n Creado por Iñaki García Noya \n===========================================\n");
+
 	//	Inicialización de estructuras	
 	identif_t idtimer, idclock, idprocessgenerator, idscheduler;;
 	
@@ -105,6 +106,9 @@ int main(int argc, char *argv[]) {
 	if (argc != 4)
 	{
 		mensaje_error("Los parametros sos: ./scritp frecuenciaClock frecuenciaTimer frecuenciaProcessGen \n Ejemplo: ./kernel 10 10 10 \n");
+	}
+	if(atoi(argv[1]) % 10 != 0) {
+		mensaje_error("La frencuacia del reloj, parámetro 1, tiene que ser multiplo de 10");
 	}
 	struct parametros p1; //	clock
 	struct parametros p2; //	timer
@@ -121,16 +125,14 @@ int main(int argc, char *argv[]) {
 	p3.tid=idprocessgenerator.tid;
 	p3.frec=atoi(argv[3]);
 
-	printf("Comienza el programa V.2\n");
-	//	Se crean los hilos necesarios para todo el sistema
-	// pthread_create(&(idHilo),atributosHilo,funcion, parametroVoid)
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timerScheduler,(void *)&p2);
 	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
 	pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
 
 	sleep(WAITING_TO_EXIT);
-	printf("Finn\n");
+	printf("\nFinalizando ejecución del programa\n");
+	
 	imprimirEstructura();
 	return(0);
 }
@@ -140,35 +142,14 @@ int main(int argc, char *argv[]) {
  *----------------------------------------------------------------*/
 
 void inicializar() {
-   pthread_mutex_init(&mutex, NULL);
-   pthread_mutex_init(&mutexC, NULL);
-   pthread_mutex_init(&mutexPCB, NULL);
-   
-   //sem_init(&sem_cola, 0, 0);
-
-   clockTime=0;
-   queue0_ptr = createQueue();
-   queue1_ptr = createQueue();
-   queue2_ptr = createQueue();
-   queue3_ptr = createQueue();
-
-
-    // int i = 0;
-	// int j = 0;
-	// int k = 0;
-	// struct PCB pcb;
-	// while (i < NUM_CPU)
-	// {
-	// 	while (j < NUM_CORE)
-	// 	{
-	// 		while (k < MAXTHREAD)
-	// 		{
-	// 			arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pcb;
-	// 			k++;
-	// 		} j++;
-	// 	} i++;
-	// }
-
+	pthread_mutex_init(&mutexT, NULL);
+	pthread_mutex_init(&mutexC, NULL);	//	Mutex Clock
+	pthread_mutex_init(&mutexPCB, NULL); //	Mutex para el acceso de las estructas de CPU, structuras PCB
+	clockTime=0;
+	queue0_ptr = createQueue();
+	queue1_ptr = createQueue();
+	queue2_ptr = createQueue();
+	queue3_ptr = createQueue();
 } // inicializar
 
 /*----------------------------------------------------------------- 
@@ -180,11 +161,11 @@ void *kernelClock(void *arg) {
 	ptr = (struct parametros *)arg;
 	int id = p.tid;
 	int frec = p.frec;
+	
 	int count;
 	while(1) {
 		count++;
-		// Aproximado: 1s
-		if (count == 100000000)
+		if (count == 10000000*frec)
 		{
 			count=0;
 			pthread_mutex_lock(&mutexC);
@@ -207,7 +188,7 @@ void *timerScheduler(void *arg) {
 	int frec = p.frec;
 	while(1) {
 		pthread_mutex_lock(&mutexC);
-		if (clockTime>=10)
+		if (clockTime>=frec)
 		{
 			clockTime=0;
 			priorityTime++;
@@ -242,7 +223,6 @@ void *processGenerator(void *arg) {
 		pcb.id=i;
 		pcb.prioridad = rand() % (3+1-0) + 0;
 		pcb.quantum = rand() % (100+1-1) + 1;
-		pthread_mutex_lock(&mutex);
 		switch (pcb.prioridad)
 		{
 		case 0:
@@ -261,7 +241,6 @@ void *processGenerator(void *arg) {
 			break;
 		} 
 		//printf("  Process Generator[%d] produce %02d %03d\n", id, pcb.id,pcb.quantum);
-		pthread_mutex_unlock(&mutex);
 		i++;	
 	}
 }
@@ -277,7 +256,7 @@ void *schedulerTiempo(void *arg) {
 	bool seguir=true;
 	while (1)
 	{
-		pthread_mutex_lock(&mutex);
+		pthread_mutex_lock(&mutexT);
 		if (timer_flag==1)
 		{
 			printf("Soy un Scheduler por tiempo con número [%d] \n", id);
@@ -300,14 +279,14 @@ void *schedulerTiempo(void *arg) {
 				}else{asignarPCB(dequeue(queue0_ptr));}
 			}
 		}
-		pthread_mutex_unlock(&mutex);	
+		pthread_mutex_unlock(&mutexT);	
 	}
 }
 
 void *schedulerEvento(void *c_ptr) {
 	bool seguir=true;
 	struct PCB pcb; 
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutexT);
 	while (seguir)
 	{
 		if (isEmpty(queue0_ptr))
@@ -324,7 +303,7 @@ void *schedulerEvento(void *c_ptr) {
 			}else{pcb = dequeue(queue1_ptr);}
 		}else{pcb = dequeue(queue0_ptr);}
 	}
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutexT);
 	if (seguir)
 	{
 		struct core_thread *c_ptrAux = (struct core_thread*)c_ptr;
@@ -432,10 +411,13 @@ void decrementarQ_ListaPCB() {
 			{
 				if (arr_cpu[i].arr_core[j].arr_th[k].is_process)
 				{
-					if (arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum==1)
+					if (arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum>0)
 					{
-						arr_cpu[i].arr_core[j].arr_th[k].is_process=false;
-					}else{
+						if (arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum==1)
+						{
+							arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum=0;
+							arr_cpu[i].arr_core[j].arr_th[k].is_process=false;
+						}
 						arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum--;
 					}
 				}
