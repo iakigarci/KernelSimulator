@@ -9,7 +9,7 @@
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 30
+#define WAITING_TO_EXIT 15
 #define NUM_CPU 		2
 #define NUM_CORE		2
 #define MAXTHREAD       5
@@ -60,8 +60,7 @@ struct Queue *queue0_ptr, queue0;
 struct Queue *queue1_ptr, queue1;
 struct Queue *queue2_ptr, queue2;
 struct Queue *queue3_ptr, queue3;
-struct PCB* array_PCB[MAX_PCB];
-pthread_mutex_t mutex, mutexC;
+pthread_mutex_t mutex, mutexC, mutexPCB;
 sem_t sem_cola;
 int clockTime, priorityTime, timer_flag;
 
@@ -105,7 +104,7 @@ int main(int argc, char *argv[]) {
 	//	Control de parametros de entrada
 	if (argc != 4)
 	{
-		mensaje_error("Los parametros sos: ./scritp frecuenciaClock frecuenciaTimer frecuenciaProcessGen");
+		mensaje_error("Los parametros sos: ./scritp frecuenciaClock frecuenciaTimer frecuenciaProcessGen \n Ejemplo: ./kernel 10 10 10 \n");
 	}
 	struct parametros p1; //	clock
 	struct parametros p2; //	timer
@@ -143,6 +142,7 @@ int main(int argc, char *argv[]) {
 void inicializar() {
    pthread_mutex_init(&mutex, NULL);
    pthread_mutex_init(&mutexC, NULL);
+   pthread_mutex_init(&mutexPCB, NULL);
    
    //sem_init(&sem_cola, 0, 0);
 
@@ -241,8 +241,7 @@ void *processGenerator(void *arg) {
 		sleep(frec);
 		pcb.id=i;
 		pcb.prioridad = rand() % (3+1-0) + 0;
-		pcb.quantum = rand() % (10+1-10) + 10;
-		//sem_wait(&sem_cola);
+		pcb.quantum = rand() % (100+1-1) + 1;
 		pthread_mutex_lock(&mutex);
 		switch (pcb.prioridad)
 		{
@@ -263,7 +262,6 @@ void *processGenerator(void *arg) {
 		} 
 		//printf("  Process Generator[%d] produce %02d %03d\n", id, pcb.id,pcb.quantum);
 		pthread_mutex_unlock(&mutex);
-		//sem_post(&sem_cola);
 		i++;	
 	}
 }
@@ -284,6 +282,7 @@ void *schedulerTiempo(void *arg) {
 		{
 			printf("Soy un Scheduler por tiempo con número [%d] \n", id);
 			timer_flag=0;
+			seguir=true;
 			while (seguir)
 			{
 				if (isEmpty(queue0_ptr))
@@ -339,6 +338,7 @@ void asignarPCB(struct PCB pPcb) {
 	int j = 0;
 	int k = 0;
 	bool seguir = true;
+	pthread_mutex_lock(&mutexPCB);
 	while (i < NUM_CPU && seguir)
 	{
 		while (j < NUM_CORE && seguir)
@@ -348,11 +348,10 @@ void asignarPCB(struct PCB pPcb) {
 				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) { // Se mira si hay proceso
 					k++;
 				}else{
-					printf("Metido [%d] prioridad [%d] en [%d][%d][%d]",pPcb.id,pPcb.prioridad, i,j,k);
+					printf("Metido [%d] quantum [%d] en [%d][%d][%d]",pPcb.id,pPcb.quantum, i,j,k);
 					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pPcb;
 					seguir = false;
 					arr_cpu[i].arr_core[j].arr_th[k].is_process = true;
-					array_PCB[pPcb.id] = &pPcb;
 				}
 			}
 			k=0;
@@ -362,9 +361,10 @@ void asignarPCB(struct PCB pPcb) {
 		k=0;
 		i++;
 	}
-	if (seguir){
-		asignarPCB(pPcb);
-	}
+	pthread_mutex_unlock(&mutexPCB);
+	// if (seguir){
+	// 	asignarPCB(pPcb);
+	// }
 }
 
 void imprimirEstructura() {
@@ -420,21 +420,35 @@ void decrementarQ_PCB(struct core_thread c_thread) {
 }
 
 void decrementarQ_ListaPCB() {
-	PCB pcbAux;
-	for (int i = 0; i < MAX_PCB; i++)
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	pthread_mutex_lock(&mutexPCB);
+	while (i < NUM_CPU)
 	{
-		PCB* pcb_ptr = array_PCB[i];
-		pcbAux.quantum = pcb_ptr->quantum;
-		if (pcbAux.quantum>0)
+		while (j < NUM_CORE)
 		{
-			pcbAux.id = pcb_ptr->id;
-			pcbAux.prioridad = pcb_ptr->prioridad;
-			pcbAux.quantum = pcb_ptr->quantum-1;
-			array_PCB[i] = &pcb_ptr;
-		}
-		;
+			while (k < MAXTHREAD)
+			{
+				if (arr_cpu[i].arr_core[j].arr_th[k].is_process)
+				{
+					if (arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum==1)
+					{
+						arr_cpu[i].arr_core[j].arr_th[k].is_process=false;
+					}else{
+						arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum--;
+					}
+				}
+				k++;
+			}
+			k=0;
+			j++;
+		} 
+		j=0;
+		k=0;
+		i++;
 	}
-	
+	pthread_mutex_unlock(&mutexPCB);
 }
 
 void aumentarPrioridad() { 
