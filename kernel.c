@@ -7,83 +7,23 @@
 #include <stdbool.h>
 #include <limits.h> 
 
-#define DELAY_TIMER     5
-#define BUFFER_MAX      5
-#define WAITING_TO_EXIT 15
-#define NUM_CPU 		2
-#define NUM_CORE		2
-#define MAXTHREAD       5
-#define MAX_PCB			100
-
-typedef struct { 
-  pthread_t tid; 
-} identif_t; 
-
-struct parametros {
-	int tid;
-	int frec;
-};
-
-enum scheduler_m { timer, event } scheduler_flag;
-
-/** ESTRUCTURAS CPU **/
-typedef struct PCB {
-	int id;
-	int quantum;
-	int prioridad; // 0..3
-}PCB; 
-
-typedef struct Queue { 
-	int front, rear, size; 
-	struct PCB arr_pcb[BUFFER_MAX]; 
-}Queue;  
-
-typedef struct core_thread 
-{
-	bool is_process;
-	struct PCB t_pcb;
-} c_thread;
-
-typedef struct cpu_core
-{
-   c_thread arr_th[MAXTHREAD];
-} core;
-
-typedef struct cpu
-{
-   core arr_core[NUM_CORE];
-} cpu_t;
+#include "definitions.h"
+#include "queue.h"
 
 /** ---------------- **/
-struct cpu arr_cpu[NUM_CPU];
-struct Queue *queue0_ptr, queue0;
-struct Queue *queue1_ptr, queue1;
-struct Queue *queue2_ptr, queue2;
-struct Queue *queue3_ptr, queue3;
-pthread_mutex_t mutexT, mutexC, mutexPCB;
-sem_t sem_cola;
-int clockTime, priorityTime, timer_flag;
-
 void *kernelClock(void *arg); 
 void *timerScheduler(void *arg); 
 void *processGenerator(void *arg); 
 void *schedulerTiempo(void *arg); 
 void *schedulerEvento(void *c_thread);
 // void *schedulerEvento(struct core_thread c_thread);
-struct Queue* createQueue() ;
-int isFull(struct Queue* queue);
-int isEmpty(struct Queue* queue) ;
-struct PCB front(struct Queue* queue) ;
-struct PCB rear(struct Queue* queue) ;
-void enqueue(struct Queue* queue, struct PCB pcb) ;
-struct PCB dequeue(struct Queue* queue);
+
 void inicializar();
 int mensaje_error(char *s);
 void asignarPCB(struct PCB pcb);
 void decrementarQ_PCB(struct core_thread c_thread);
 void decrementarQ_ListaPCB();
 void aumentarPrioridad();
-void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2);
 int todosHilosOcupados();
 void imprimirEstructura();
 
@@ -93,8 +33,6 @@ void imprimirEstructura();
  * arg[2]	timerFrec
  * arg[3]	processFrec
  *----------------------------------------------------------------*/
-
-
 int main(int argc, char *argv[]) {
 	
 	printf("\n===========================================\n Inicio del programa de la asignatura de SO \n Creado por Iñaki García Noya \n===========================================\n");
@@ -439,19 +377,7 @@ void aumentarPrioridad() {
 	subirPrioridadColas(queue3_ptr,queue2_ptr);
 }
 
-/**
- * Sube cola 1 a cola 2
-**/
-void subirPrioridadColas(struct Queue* pQueue1, struct Queue* pQueue2) {
-	bool seguir;
-	while (seguir)
-	{
-		if (!isEmpty(pQueue1))
-		{
-			enqueue(pQueue2,dequeue(pQueue1));
-		}else{ seguir=false; }
-	}
-}
+
 /**
  * 0	False
  * 1	True
@@ -479,94 +405,7 @@ int todosHilosOcupados() {
 	}
 	return 1;
 }
-/*----------------------------------------------------------------- 
- *   Queue
- *----------------------------------------------------------------*/
-struct Queue* createQueue() 
-{ 
-	struct Queue* pQueue = (struct Queue*)malloc(sizeof(struct Queue)); 
-	pQueue->front = pQueue->size = 0; 
-  
-	pQueue->rear = BUFFER_MAX - 1; 
-	return pQueue; 
-} 
 
-// Queue is full when size becomes 
-// equal to the capacity 
-int isFull(struct Queue* pQueue) 
-{ 
-	return (pQueue->size == BUFFER_MAX); 
-} 
-  
-// Queue is empty when size is 0 
-int isEmpty(struct Queue* pQueue) 
-{ 
-	return (pQueue->size == 0); 
-} 
-  
-// Function to add an item to the queue. 
-// It changes rear and size 
-void enqueue(struct Queue* pQueue, struct PCB pcb) 
-{ 
-	if (isFull(pQueue)) 
-		return; 
-	pQueue->rear = (pQueue->rear + 1) 
-				  % BUFFER_MAX; 
-	pQueue->arr_pcb[pQueue->rear] = pcb; 
-	pQueue->size = pQueue->size + 1; 
-	//printf("%d enqueued to queue\n", pcb.id); 
-} 
-  
-// Function to remove an item from queue. 
-// It changes front and size 
-struct PCB dequeue(struct Queue* pQueue) 
-{ 
-	if (isEmpty(pQueue)) {
-		struct PCB pcbNulo; 
-		pcbNulo.quantum=0;
-		return pcbNulo;
-	} 
-	struct PCB pcb = pQueue->arr_pcb[pQueue->front]; 
-	pQueue->front = (pQueue->front + 1) 
-				   % BUFFER_MAX; 
-	pQueue->size = pQueue->size - 1; 
-	return pcb; 
-} 
-  
-// Function to get front of queue 
-struct PCB front(struct Queue* pQueue) 
-{ 
-	if (isEmpty(pQueue)) { 	
-		struct PCB pcbNulo;
-		pcbNulo.quantum=0;
-		return pcbNulo; 
-	}
-	return pQueue->arr_pcb[pQueue->front]; 
-} 
-  
-// Function to get rear of queue 
-struct PCB rear(struct Queue* pQueue) 
-{ 
-	if (isEmpty(pQueue)) { 	
-		struct PCB pcbNulo;
-		pcbNulo.quantum=0;
-		return pcbNulo; 
-	}
-	return pQueue->arr_pcb[pQueue->rear]; 
-} 
-
-void printQueue(struct Queue* pQueue)
-{
-	printf("Queue");
-	printf("[ \t");
-	struct PCB pcbAux;
-	while (!isEmpty(pQueue))
-	{
-		pcbAux = dequeue(pQueue);
-		printf("[%d]-[%d]-[%d]\t",pcbAux.id,pcbAux.prioridad,pcbAux.quantum);
-	}
-	printf("] \n");
-}
 /*----------------------------------------------------------------- 
  *   mensajes
  *----------------------------------------------------------------*/
