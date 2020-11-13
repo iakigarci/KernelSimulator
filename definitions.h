@@ -2,6 +2,9 @@
 #define DEFINITIONS_H
 
 #include <pthread.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5

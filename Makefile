@@ -3,9 +3,9 @@
 #	A. Delis (ad@di.uoa.gr)
 #
 
-OBJS	= kernel.o queue.o
-SOURCE	= kernel.c queue.c
-HEADER	= queue.h definitions.h
+OBJS	= kernel.o queue.o thread.o mensajes.o
+SOURCE	= kernel.c queue.c thread.c mensajes.c
+HEADER	= queue.h definitions.h thread.h mensajes.h
 OUT	= kernel.out
 CC	 = gcc
 FLAGS	 = -g -c -Wall
@@ -24,6 +24,12 @@ kernel.o: kernel.c
 
 queue.o: queue.c
 	$(CC) $(FLAGS) queue.c 
+
+thread.o: thread.c
+	$(CC) $(FLAGS) thread.c 
+
+mensajes.o: mensajes.c
+	$(CC) $(FLAGS) mensajes.c 
 
 
 # clean house

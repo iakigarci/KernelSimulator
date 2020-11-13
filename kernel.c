@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <unistd.h>
 #include <stdlib.h>   
 #include <time.h>    
@@ -9,23 +8,19 @@
 
 #include "definitions.h"
 #include "queue.h"
+#include "thread.h"
+#include "mensajes.h"
 
 /** ---------------- **/
-void *kernelClock(void *arg); 
-void *timerScheduler(void *arg); 
-void *processGenerator(void *arg); 
-void *schedulerTiempo(void *arg); 
-void *schedulerEvento(void *c_thread);
+
 // void *schedulerEvento(struct core_thread c_thread);
 
 void inicializar();
-int mensaje_error(char *s);
 void asignarPCB(struct PCB pcb);
 void decrementarQ_PCB(struct core_thread c_thread);
 void decrementarQ_ListaPCB();
 void aumentarPrioridad();
 int todosHilosOcupados();
-void imprimirEstructura();
 
 /*----------------------------------------------------------------- 
  *   main
@@ -43,7 +38,7 @@ int main(int argc, char *argv[]) {
 	//	Control de parametros de entrada
 	if (argc != 4)
 	{
-		mensaje_error("Los parametros sos: ./scritp frecuenciaClock frecuenciaTimer frecuenciaProcessGen \n Ejemplo: ./kernel 10 10 10 \n");
+		mensaje_error("Los parametros sos: ./script frecuenciaClock frecuenciaTimer frecuenciaProcessGen \n Ejemplo: ./kernel 10 10 10 \n");
 	}
 	if(atoi(argv[1]) % 10 != 0) {
 		mensaje_error("La frencuacia del reloj, parámetro 1, tiene que ser multiplo de 10");
@@ -90,165 +85,6 @@ void inicializar() {
 	queue3_ptr = createQueue();
 } // inicializar
 
-/*----------------------------------------------------------------- 
- *   clock
- *----------------------------------------------------------------*/
-
-void *kernelClock(void *arg) {
-	struct parametros *ptr, p;
-	ptr = (struct parametros *)arg;
-	int id = p.tid;
-	int frec = p.frec;
-	
-	int count;
-	while(1) {
-		count++;
-		if (count == 10000000*frec)
-		{
-			count=0;
-			pthread_mutex_lock(&mutexC);
-			clockTime++;
-			//printf("  CLOCK[%d] \n", clockTime);
-			pthread_mutex_unlock(&mutexC);	
-			decrementarQ_ListaPCB();
-		}
-	}
-}
-
-/*----------------------------------------------------------------- 
- *   timer
- *----------------------------------------------------------------*/
-
-void *timerScheduler(void *arg) {
-	struct parametros *ptr, p;
-	ptr = (struct parametros *)arg;
-	int id = p.tid;
-	int frec = p.frec;
-	while(1) {
-		pthread_mutex_lock(&mutexC);
-		if (clockTime>=frec)
-		{
-			clockTime=0;
-			priorityTime++;
-			printf("  TIMER[%d] avisa\n", id);
-			timer_flag=1;
-			if (priorityTime>=10)
-			{
-				priorityTime=0;
-				aumentarPrioridad();
-				if(todosHilosOcupados()) {
-					scheduler_flag = event;
-				}
-			}
-		}
-		pthread_mutex_unlock(&mutexC);	
-		
-	}
-} 
-/*----------------------------------------------------------------- 
- *   process generator
- *----------------------------------------------------------------*/
-
-void *processGenerator(void *arg) {
-	struct parametros *ptr, p;
-	ptr = (struct parametros *)arg;
-	int id = p.tid;
-	int frec = p.frec;
-	int i=0;
-	struct PCB pcb;
-	while(1) {
-		sleep(frec);
-		pcb.id=i;
-		pcb.prioridad = rand() % (3+1-0) + 0;
-		pcb.quantum = rand() % (100+1-1) + 1;
-		switch (pcb.prioridad)
-		{
-		case 0:
-			enqueue(queue0_ptr,pcb);
-			break;
-		case 1:
-			enqueue(queue1_ptr,pcb);
-			break;
-		case 2:
-			enqueue(queue2_ptr,pcb);
-			break;
-		case 3:
-			enqueue(queue3_ptr,pcb);
-			break;
-		default:
-			break;
-		} 
-		//printf("  Process Generator[%d] produce %02d %03d\n", id, pcb.id,pcb.quantum);
-		i++;	
-	}
-}
-
-/*----------------------------------------------------------------- 
- *   scheduler
- *----------------------------------------------------------------*/
-void *schedulerTiempo(void *arg) {
-	struct parametros *ptr, p;
-	ptr = (struct parametros *)arg;
-	int id = p.tid;
-	int frec = p.frec;
-	bool seguir=true;
-	while (1)
-	{
-		pthread_mutex_lock(&mutexT);
-		if (timer_flag==1)
-		{
-			printf("Soy un Scheduler por tiempo con número [%d] \n", id);
-			timer_flag=0;
-			seguir=true;
-			while (seguir)
-			{
-				if (isEmpty(queue0_ptr))
-				{
-					if (isEmpty(queue1_ptr))
-					{
-						if (isEmpty(queue2_ptr))
-						{
-							if (isEmpty(queue3_ptr))
-							{
-								seguir=false;
-							}else{asignarPCB(dequeue(queue3_ptr));}
-						}else{asignarPCB(dequeue(queue2_ptr));}
-					}else{asignarPCB(dequeue(queue1_ptr));}
-				}else{asignarPCB(dequeue(queue0_ptr));}
-			}
-		}
-		pthread_mutex_unlock(&mutexT);	
-	}
-}
-
-void *schedulerEvento(void *c_ptr) {
-	bool seguir=true;
-	struct PCB pcb; 
-	pthread_mutex_lock(&mutexT);
-	while (seguir)
-	{
-		if (isEmpty(queue0_ptr))
-		{
-			if (isEmpty(queue1_ptr))
-			{
-				if (isEmpty(queue2_ptr))
-				{
-					if (isEmpty(queue3_ptr))
-					{
-						seguir=false;
-					}else{pcb = dequeue(queue3_ptr);}
-				}else{pcb = dequeue(queue2_ptr);}
-			}else{pcb = dequeue(queue1_ptr);}
-		}else{pcb = dequeue(queue0_ptr);}
-	}
-	pthread_mutex_unlock(&mutexT);
-	if (seguir)
-	{
-		struct core_thread *c_ptrAux = (struct core_thread*)c_ptr;
-		c_ptrAux->t_pcb=pcb;
-		c_ptrAux->is_process=true;
-	}
-}
 
 void asignarPCB(struct PCB pPcb) {
 	int i = 0;
@@ -284,39 +120,6 @@ void asignarPCB(struct PCB pPcb) {
 	// }
 }
 
-void imprimirEstructura() {
-	printf("Estructura \n");
-	printf("Número de CPU [%d] \n", NUM_CPU);
-	printf("Número de CORE [%d] \n", NUM_CORE);
-	printf("Número de thread [%d] \n", MAXTHREAD);
-	int i = 0;
-	int j = 0;
-	int k = 0;
-	while (i < NUM_CPU)
-	{
-		printf("CPU [%d] \n", i);
-		while (j < NUM_CORE)
-		{
-			printf("\t CORE [%d] \n", j);
-			while (k < MAXTHREAD)
-			{
-				printf("\t \t T [%d]", k);
-				printf("\t \t  PCB [%d]|[%d]|[%d] ", arr_cpu[i].arr_core[j].arr_th[k].t_pcb.id,arr_cpu[i].arr_core[j].arr_th[k].t_pcb.prioridad,arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum);
-				printf("\n");
-				k++;
-			}
-			k=0;
-			j++;
-		} 
-		j=0;
-		k=0;
-		i++;
-	}
-	printQueue(queue0_ptr);
-	printQueue(queue1_ptr);
-	printQueue(queue2_ptr);
-	printQueue(queue3_ptr);
-}
 
 void decrementarQ_PCB(struct core_thread c_thread) {
 	int i;
@@ -406,11 +209,3 @@ int todosHilosOcupados() {
 	return 1;
 }
 
-/*----------------------------------------------------------------- 
- *   mensajes
- *----------------------------------------------------------------*/
-
-int mensaje_error(char *s) {
-	printf("***error*** %s\n",s);
-	exit(-1);
-}
