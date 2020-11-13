@@ -16,21 +16,16 @@ struct Queue* createQueue()
 	return pQueue; 
 } 
 
-// Queue is full when size becomes 
-// equal to the capacity 
 int isFull(struct Queue* pQueue) 
 { 
 	return (pQueue->size == BUFFER_MAX); 
 } 
   
-// Queue is empty when size is 0 
 int isEmpty(struct Queue* pQueue) 
 { 
 	return (pQueue->size == 0); 
 } 
   
-// Function to add an item to the queue. 
-// It changes rear and size 
 void enqueue(struct Queue* pQueue, struct PCB pcb) 
 { 
 	if (isFull(pQueue)) 
@@ -42,8 +37,6 @@ void enqueue(struct Queue* pQueue, struct PCB pcb)
 	//printf("%d enqueued to queue\n", pcb.id); 
 } 
   
-// Function to remove an item from queue. 
-// It changes front and size 
 struct PCB dequeue(struct Queue* pQueue) 
 { 
 	if (isEmpty(pQueue)) {
@@ -57,8 +50,7 @@ struct PCB dequeue(struct Queue* pQueue)
 	pQueue->size = pQueue->size - 1; 
 	return pcb; 
 } 
-  
-// Function to get front of queue 
+
 struct PCB front(struct Queue* pQueue) 
 { 
 	if (isEmpty(pQueue)) { 	
@@ -69,7 +61,6 @@ struct PCB front(struct Queue* pQueue)
 	return pQueue->arr_pcb[pQueue->front]; 
 } 
   
-// Function to get rear of queue 
 struct PCB rear(struct Queue* pQueue) 
 { 
 	if (isEmpty(pQueue)) { 	
