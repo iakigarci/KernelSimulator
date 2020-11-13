@@ -17,7 +17,6 @@
 
 void inicializar();
 void asignarPCB(struct PCB pcb);
-void decrementarQ_PCB(struct core_thread c_thread);
 void decrementarQ_ListaPCB();
 void aumentarPrioridad();
 int todosHilosOcupados();
@@ -77,7 +76,7 @@ int main(int argc, char *argv[]) {
 void inicializar() {
 	pthread_mutex_init(&mutexT, NULL);
 	pthread_mutex_init(&mutexC, NULL);	//	Mutex Clock
-	pthread_mutex_init(&mutexPCB, NULL); //	Mutex para el acceso de las estructas de CPU, structuras PCB
+	pthread_mutex_init(&mutexPCB, NULL);    //	Mutex para el acceso de las estructas de CPU, structuras PCB
 	clockTime=0;
 	queue0_ptr = createQueue();
 	queue1_ptr = createQueue();
@@ -118,25 +117,6 @@ void asignarPCB(struct PCB pPcb) {
 	// if (seguir){
 	// 	asignarPCB(pPcb);
 	// }
-}
-
-
-void decrementarQ_PCB(struct core_thread c_thread) {
-	int i;
-	struct PCB pcb = c_thread.t_pcb;
-	while (i<pcb.quantum) ;
-	{
-		pcb.quantum--;
-		i++;
-	}
-	pcb.quantum=0;
-	c_thread.is_process=false;
-	if (scheduler_flag == event)
-	{
-		identif_t idscheduler;
-		struct core_thread *c_ptr, c_thread;
-		pthread_create(&(idscheduler.tid),NULL,schedulerEvento,(void*) c_ptr);
-	}
 }
 
 void decrementarQ_ListaPCB() {
