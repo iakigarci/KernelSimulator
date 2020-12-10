@@ -9,7 +9,7 @@
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
 #define WAITING_TO_EXIT 15
-#define NUM_CPU 		2
+#define NUM_CPU 		3
 #define NUM_CORE		2
 #define MAXTHREAD       5
 #define MAX_PCB			100

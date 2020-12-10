@@ -1,15 +1,11 @@
-#
-# In order to execute this "Makefile" just type "make"
-#	A. Delis (ad@di.uoa.gr)
-#
 
 OBJS	= kernel.o queue.o thread.o mensajes.o
 SOURCE	= kernel.c queue.c thread.c mensajes.c
-HEADER	= queue.h definitions.h thread.h mensajes.h
+HEADER	= queue.h definitions.h thread.h mensajes.h 
 OUT	= kernel.out
 CC	 = gcc
 FLAGS	 = -g -c -Wall
-LFLAGS	 = -lpthread -lm
+LFLAGS	 = -lpthread
 # -g option enables debugging mode 
 # -c flag generates object code for separate files
 

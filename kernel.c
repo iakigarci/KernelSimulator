@@ -29,8 +29,7 @@ int todosHilosOcupados();
  *----------------------------------------------------------------*/
 int main(int argc, char *argv[]) {
 	
-	printf("\n===========================================\n Inicio del programa de la asignatura de SO \n Creado por Iñaki García Noya \n===========================================\n");
-
+	printf("\n===========================================\n IInicio del programa de la asignatura de SO \n Creado por Iñaki García Noya \n===========================================\n");
 	//	Inicialización de estructuras	
 	identif_t idtimer, idclock, idprocessgenerator, idscheduler;;
 	

@@ -1,7 +1,7 @@
-#ifndef QUEUE_H
-#define QUEUE_H
+#ifndef MENSAJES_H
+#define MENSAJES_H
 
 int mensaje_error(char *s);
 void imprimirEstructura();
 
-#endif // QUEUE_H
+#endif // MENSAJES_H

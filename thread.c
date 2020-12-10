@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include "thread.h"
 
-#include "definitions.h"
 #include "queue.h"
 
 /*----------------------------------------------------------------- 
@@ -22,7 +21,7 @@ void *kernelClock(void *arg) {
 	int count;
 	while(1) {
 		count++;
-		if (count == 10000000*frec)
+		if (count == 100000*frec)
 		{
 			count=0;
 			pthread_mutex_lock(&mutexC);
@@ -49,7 +48,7 @@ void *timerScheduler(void *arg) {
 		{
 			clockTime=0;
 			priorityTime++;
-			printf("  TIMER[%d] avisa\n", id);
+			//printf("  TIMER[%d] avisa\n", id);
 			timer_flag=1;
 			if (priorityTime>=10)
 			{
@@ -116,7 +115,7 @@ void *schedulerTiempo(void *arg) {
 		pthread_mutex_lock(&mutexT);
 		if (timer_flag==1)
 		{
-			printf("Soy un Scheduler por tiempo con número [%d] \n", id);
+			// printf("Soy un Scheduler por tiempo con número [%d] \n", id);
 			timer_flag=0;
 			seguir=true;
 			while (seguir)
