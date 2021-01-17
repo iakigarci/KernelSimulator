@@ -64,42 +64,123 @@ void *timerScheduler(void *arg) {
 	}
 } 
 /*----------------------------------------------------------------- 
- *   process generator
+ *   loader
  *----------------------------------------------------------------*/
 
-void *processGenerator(void *arg) {
+void *loader(void *arg) {
 	struct parametros *ptr, p;
 	ptr = (struct parametros *)arg;
-	int id = p.tid;
 	int frec = p.frec;
-	int i=0;
-	struct PCB pcb;
-	while(1) {
-		sleep(frec);
-		pcb.id=i;
-		pcb.prioridad = rand() % (3+1-0) + 0;
-		pcb.quantum = rand() % (100+1-1) + 1;
-		switch (pcb.prioridad)
+	char path[22];
+	int idFichero=0;
+	char buffer[255];
+	bool salir = false;
+	while (1)
+	{
+		// Abrir carpeta y leer todos los ficheros
+		snprintf(path,22,"prometeo/prog%03d.elf",idFichero);
+		FILE * fichero = fopen(path,"r");
+		int nLineas=2;
+		while (fgets(buffer,120,fichero)!=NULL)	// Obtener nnumero de lineas
 		{
-		case 0:
-			enqueue(queue0_ptr,pcb);
-			break;
-		case 1:
-			enqueue(queue1_ptr,pcb);
-			break;
-		case 2:
-			enqueue(queue2_ptr,pcb);
-			break;
-		case 3:
-			enqueue(queue3_ptr,pcb);
-			break;
-		default:
-			break;
-		} 
-		//printf("  Process Generator[%d] produce %02d %03d\n", id, pcb.id,pcb.quantum);
-		i++;	
+			nLineas++;
+		}
+		int nMarcos;
+		if (nLineas % 64 == 0) // Obtener marcos necesarios
+		{
+			nMarcos = nLineas / 64 ;
+		}else {
+			nMarcos = 1 + nLineas / 64 ;
+		}
+		salir = false;
+		while(!salir) {
+			if (nMarcos >= marcosDisp)
+			{
+				salir = true;
+				struct PCB pcb;
+				//asignar prioridad y quantum
+				sleep(frec);
+				pcb.id=idFichero;
+				pcb.prioridad = rand() % (3+1-0) + 0;
+				pcb.quantum = rand() % (100+1-1) + 1;
+							
+				// Se lee el ficher, inicializando mm de pcb y leyendo las lineas
+				rewind(fichero);
+				fgets(buffer,120,fichero); // Avanza uno
+				char * linea = strtok(buffer," "); // Separamos el texto
+				linea = strtok(NULL," ");
+				pcb.mm.code = strtol(linea,&linea,16);
+				fgets(buffer,120,fichero);
+				char * linea = strtok(buffer," "); // Separamos el texto
+				linea = strtok(NULL," ");
+				pcb.mm.data = strtol(linea,&linea,16);
+
+				// Tabla de paginas
+				pcb.mm.pgb = malloc(sizeof(long)*nMarcos);
+				int pPGB = 0;
+				for (int j = 0; j < sizeMemoria; j+=256)
+				{
+					if (memoriaFisica[j]==0)
+					{
+						pcb.mm.pgb[pPGB] = j;
+						pPGB++;
+						if (pPGB==nMarcos)
+						{
+							break;
+						}	
+					}
+				}
+				int nIns,pgbAct = 0;
+				long posMemoria = pcb.mm.pgb[0];
+				long lineaLeida;
+
+				while (fgets(buffer,120,fichero)!=NULL)	// Se lee lineas desde la 3ra y se rellaena memoria
+				{
+					if (nIns==63) // Marco lleno
+					{
+						pgbAct++;
+						nIns=0;
+						posMemoria = pcb.mm.pgb[pgbAct];
+					}
+					
+					lineaLeida = strtol(buffer,NULL,16);
+					memoriaFisica[posMemoria]=lineaLeida;
+					posMemoria+=4;
+					nIns++;
+				}
+
+				switch (pcb.prioridad)	// Se introduce el PCB en cola de prioridades
+				{
+					case 0:
+						enqueue(queue0_ptr,pcb);
+						break;
+					case 1:
+						enqueue(queue1_ptr,pcb);
+						break;
+					case 2:
+						enqueue(queue2_ptr,pcb);
+						break;
+					case 3:
+						enqueue(queue3_ptr,pcb);
+						break;
+					default:
+						break;
+				}
+
+				if (idFichero>49) // TODO
+				{
+					idFichero=0;
+				}
+			}else{ // Esperar hasta que se liberen los marcos
+				sleep(15);
+			}
+		}
+		
+		fclose(fichero);
 	}
 }
+
+
 
 /*----------------------------------------------------------------- 
  *   scheduler

@@ -13,6 +13,9 @@
 #define NUM_CORE		2
 #define MAXTHREAD       5
 #define MAX_PCB			100
+#define CLOCK_DEFAULT	100
+#define TIMER_DEFAULT	100
+#define MEMORY_SIZE_DEFAULT	8
 
 typedef struct { 
   pthread_t tid; 
@@ -25,11 +28,19 @@ struct parametros {
 
 enum scheduler_m { timer, event } scheduler_flag;
 
+typedef struct mm {
+	long code;
+	long data;
+	long * pgb;
+}mm;
+
 /** ESTRUCTURAS CPU **/
 typedef struct PCB {
 	int id;
 	int quantum;
 	int prioridad; // 0..3
+	long arr_registr[16];
+	struct mm mm;
 }PCB; 
 
 typedef struct Queue { 
@@ -41,6 +52,7 @@ typedef struct core_thread
 {
 	bool is_process;
 	struct PCB t_pcb;
+	long arr_registr[16];
 } c_thread;
 
 typedef struct cpu_core
@@ -53,9 +65,25 @@ typedef struct cpu
    core arr_core[NUM_CORE];
 } cpu_t;
 
+typedef struct configuration_t {
+    unsigned int  virtual_bits;
+    unsigned int  offset_bits;
+    unsigned int  offset_mask;
+    unsigned int  num_page_bits;
+    unsigned int  pages;
+    unsigned int  max_lines;
+    char		  *prog_name;
+    unsigned int  first_number;
+    unsigned int  how_many;
+} configuration_t;
+
+
 pthread_mutex_t mutexT, mutexC, mutexPCB;
 int clockTime, priorityTime, timer_flag;
 struct cpu arr_cpu[NUM_CPU];
+struct configuration_t conf;
+long * memoriaFisica;
+int sizeMemoria, marcosDisp, marcosMax;
 
 struct Queue *queue0_ptr, queue0;
 struct Queue *queue1_ptr, queue1;
