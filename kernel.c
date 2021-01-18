@@ -6,23 +6,24 @@
 #include <stdbool.h>
 #include <limits.h> 
 #include <getopt.h>
+#include <math.h>
 
 #include "definitions.h"
-#include "queue.h"
-#include "thread.h"
-#include "mensajes.h"
 
 /** ---------------- **/
 
 // void *schedulerEvento(struct core_thread c_thread);
 
 void inicializar();
-void asignarPCB(struct PCB pcb);
-void decrementarQ_ListaPCB();
+void asignarPCB(struct PCB pPcb);
+void decrementarQuantumYEjecutar();
 void aumentarPrioridad();
 int todosHilosOcupados();
 void display_header();
-void guardarRegistros(struct PCB *ptrPCB, struct core_thread *ptrCoreT);
+void guardarRegistros(struct core_thread *ptrCoreT);
+void volcarRegistros(struct core_thread *ptrCoreT);
+void ejecutarInstruccion(struct core_thread *ptrCoreT);
+void limpiarMarcos(struct PCB *ptrPCB);
 
 /*----------------------------------------------------------------- 
  *   main
@@ -34,27 +35,26 @@ int main(int argc, char *argv[]) {
 	
 	printf("\n===========================================\n Inicio del programa de la asignatura de SO \n Creado por Iñaki García Noya \n===========================================\n");
 	//	Inicialización de estructuras	
-	identif_t idtimer, idclock, idprocessgenerator, idscheduler;;
+	identif_t idtimer, idclock, idloader, idscheduler;;
 	
 	//	Control de parametros de entrada
 	int opt, long_index;
 	struct parametros p1; //	clock
 	struct parametros p2; //	timer
-	struct parametros p3; //	processGenerator
-	struct parametros p4; //	scheduler
+	struct parametros p3; //	loader
 
 	static struct option long_options[] = {
         {"help",       no_argument,       0,  'h' },
 		{"clock",	required_argument,	0,	'c' },
 		{"timer",	required_argument,	0,	't'},
-		{"ncpu",	required_argument,	0,	'nCPU'},
-		{"nc",	required_argument,	0,	'nC'},
+		{"nCPU",	required_argument,	0,	'nCPU'},
+		{"nC",	required_argument,	0,	'nC'},
 		{"nT",	required_argument,	0,	'nT'},
 		{"m",	required_argument,	0,	'm'},
         {0,            0,                 0,   0  }
     };
 	
-	while ((opt = getopt_long(argc, argv,":f:hl:n:p:", 
+	while ((opt = getopt_long(argc, argv,":h:c:t:nCPU:nC:nT:m:", 
                         long_options, &long_index )) != -1) {
       switch(opt) {
         case 'h':   /* -h or --help */
@@ -121,12 +121,12 @@ int main(int argc, char *argv[]) {
 
 	//	Inicializacion de los parámetros que van a tener los hilos
 	
-	p3.tid=idprocessgenerator.tid;
+	p3.tid=idloader.tid;
 	p3.frec=atoi(argv[3]);
 
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timerScheduler,(void *)&p2);
-	pthread_create(&(idprocessgenerator.tid),NULL,processGenerator,(void *)&p3);
+	pthread_create(&(idloader.tid),NULL,loader,(void *)&p3);
 	pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
 
 	sleep(WAITING_TO_EXIT);
@@ -155,7 +155,7 @@ void display_header() {
 	printf("║   Numero de hilos: %03d            ║\n", MAXTHREAD);
 	printf("║   Frecuencia del clock: %03d            ║\n", CLOCK_DEFAULT);
 	printf("║   Frecuencia del timer: %03d            ║\n", TIMER_DEFAULT);
-	printf("║   Tamaño de la memoria física: %03d            ║\n", pow(2,MEMORY_SIZE_DEFAULT));
+	printf("║   Tamaño de la memoria física: %f            ║\n", pow(2,MEMORY_SIZE_DEFAULT));
 	printf("╚═══════════════════════════════════╝\n\n");
 	// TODO, desplegar numero de programas
 } // ___display_header
@@ -202,6 +202,7 @@ void asignarPCB(struct PCB pPcb) {
 					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pPcb;
 					seguir = false;
 					arr_cpu[i].arr_core[j].arr_th[k].is_process = true;
+					volcarRegistros(&arr_cpu[i].arr_core[j].arr_th[k]);
 				}
 			}
 			k=0;
@@ -217,7 +218,7 @@ void asignarPCB(struct PCB pPcb) {
 	// }
 }
 
-void decrementarQ_ListaPCB() {
+void decrementarQuantumYEjecutar() {
 	int i = 0;
 	int j = 0;
 	int k = 0;
@@ -238,7 +239,7 @@ void decrementarQ_ListaPCB() {
 							arr_cpu[i].arr_core[j].arr_th[k].is_process=false;
 							
 							// Se mete el pcb otra vez en la cola con quantum a 0, y se copia estado
-							guardarRegistros(&arr_cpu[i].arr_core[j].arr_th[k].t_pcb,&arr_cpu[i].arr_core[j].arr_th[k]);
+							guardarRegistros(&arr_cpu[i].arr_core[j].arr_th[k]);
 							enqueue(queue0_ptr,arr_cpu[i].arr_core[j].arr_th[k].t_pcb);	
 						}
 						arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum--;
@@ -256,11 +257,20 @@ void decrementarQ_ListaPCB() {
 	pthread_mutex_unlock(&mutexPCB);
 }
 
-void guardarRegistros(struct PCB *ptrPCB, struct core_thread *ptrCoreT) {
+// guardan los registros del hilo en el pcb
+void guardarRegistros(struct core_thread *ptrCoreT) {
 	for (int i = 0; i < 16; i++)
 	{
-		ptrCoreT->arr_registr[i] = ptrPCB->arr_registr[16];
+		ptrCoreT->t_pcb.arr_registr[i] = ptrCoreT->arr_registr[i];
 		ptrCoreT->arr_registr[i] = 0;
+	}
+}
+
+// se vuelcan los registros del pcb en el hilo
+void volcarRegistros(struct core_thread *ptrCoreT) {
+	for (int i = 0; i < 16; i++)
+	{
+		ptrCoreT->arr_registr[i] = ptrCoreT->t_pcb.arr_registr[i];
 	}
 }
 
@@ -274,6 +284,7 @@ void aumentarPrioridad() {
  * 0	False
  * 1	True
 **/
+
 int todosHilosOcupados() {
 	int i,j,k;
 	while (i < NUM_CPU)
@@ -298,14 +309,17 @@ int todosHilosOcupados() {
 	return 1;
 }
 
-void ejecutarInstruccion(struct PCB *ptrPCB, struct core_thread *ptrCoreT) {  
+void ejecutarInstruccion(struct core_thread *ptrCoreT) {  
 	
-	long instruccion;
+	long instruccion = memoriaFisica[ptrCoreT->t_pcb.mm.pgb[0] + ptrCoreT->t_pcb.mm.code]; 
 	long codigo = instruccion & (0xF0000000) >> 28;
 	long registro = instruccion & (0x0F000000) >> 24;
-	long direccionAbsoluta = instruccion & (0x0000FFFF);
+	long registro1 = instruccion & (0x00F00000) >> 20;
+	long registro2 = instruccion & (0x000F0000) >> 16;
+	long direccionAbsoluta = instruccion & (0x00FFFFFF);
+	ptrCoreT->t_pcb.mm.data++;
 
-	switch (codigo)
+	/* switch (codigo)
 	{
 	case '0':	// ld (load)
 		ptrCoreT->arr_registr[registro] = 
@@ -319,15 +333,15 @@ void ejecutarInstruccion(struct PCB *ptrPCB, struct core_thread *ptrCoreT) {
 	case 'F':
 		// Se limpia el thread y los marcos
 		ptrCoreT->is_process=false;
-		limpiarMarcos(ptrPCB);
+		limpiarMarcos(&ptrCoreT->t_pcb);
 		break;
 	default:
 		mensaje_error("Codigo de instruccion incorrecto");
 		break;
-	}	
+	}	 */
 }
 
-void limpiarMarcos(struct PCB *ptrPCB){
+void limpiarMarcos(struct PCB *ptrPCB) {
 	for (long i = 0; i < sizeof(ptrPCB->mm.pgb); i++)
 	{
 		long marco = ptrPCB->mm.pgb[i];

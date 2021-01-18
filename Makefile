@@ -4,8 +4,8 @@ SOURCE	= kernel.c queue.c thread.c mensajes.c
 HEADER	= queue.h definitions.h thread.h mensajes.h 
 OUT	= kernel.out
 CC	 = gcc
-FLAGS	 = -g -c -Wall
-LFLAGS	 = -lpthread
+FLAGS	 = -g -c -Wall 
+LFLAGS	 = -lpthread -lm
 # -g option enables debugging mode 
 # -c flag generates object code for separate files
 

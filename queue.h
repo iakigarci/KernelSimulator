@@ -1,6 +1,8 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include "definitions.h"
+
 struct Queue* createQueue() ;
 int isFull(struct Queue* queue);
 int isEmpty(struct Queue* queue) ;

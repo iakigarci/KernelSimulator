@@ -1,12 +1,9 @@
 #include <pthread.h>
-
-#include "definitions.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "thread.h"
 
-#include "queue.h"
+#include "thread.h"
 
 /*----------------------------------------------------------------- 
  *   clock
@@ -28,7 +25,7 @@ void *kernelClock(void *arg) {
 			clockTime++;
 			//printf("  CLOCK[%d] \n", clockTime);
 			pthread_mutex_unlock(&mutexC);	
-			decrementarQ_ListaPCB();
+			decrementarQuantumYEjecutar();
 		}
 	}
 }
@@ -111,7 +108,7 @@ void *loader(void *arg) {
 				linea = strtok(NULL," ");
 				pcb.mm.code = strtol(linea,&linea,16);
 				fgets(buffer,120,fichero);
-				char * linea = strtok(buffer," "); // Separamos el texto
+				linea = strtok(buffer," "); // Separamos el texto
 				linea = strtok(NULL," ");
 				pcb.mm.data = strtol(linea,&linea,16);
 
@@ -134,7 +131,7 @@ void *loader(void *arg) {
 				long posMemoria = pcb.mm.pgb[0];
 				long lineaLeida;
 
-				while (fgets(buffer,120,fichero)!=NULL)	// Se lee lineas desde la 3ra y se rellaena memoria
+				while (fgets(buffer,120,fichero)!=NULL)	// Se lee lineas desde la 3ra y se rellena memoria
 				{
 					if (nIns==63) // Marco lleno
 					{

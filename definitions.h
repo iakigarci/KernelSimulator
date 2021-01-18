@@ -6,6 +6,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "thread.h"
+#include "queue.h"
+#include "mensajes.h"
+
+
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
 #define WAITING_TO_EXIT 15
