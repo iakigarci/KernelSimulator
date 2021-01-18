@@ -6,11 +6,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "thread.h"
-#include "queue.h"
-#include "mensajes.h"
-
-
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
 #define WAITING_TO_EXIT 15
@@ -90,9 +85,16 @@ struct configuration_t conf;
 long * memoriaFisica;
 int sizeMemoria, marcosDisp, marcosMax;
 
-struct Queue *queue0_ptr, queue0;
-struct Queue *queue1_ptr, queue1;
-struct Queue *queue2_ptr, queue2;
-struct Queue *queue3_ptr, queue3;
 
+
+void inicializar();
+void asignarPCB(struct PCB pPcb);
+void decrementarQuantumYEjecutar();
+void aumentarPrioridad();
+int todosHilosOcupados();
+void display_header();
+void guardarRegistros(struct core_thread *ptrCoreT);
+void volcarRegistros(struct core_thread *ptrCoreT);
+void ejecutarInstruccion(struct core_thread *ptrCoreT);
+void limpiarMarcos(struct PCB *ptrPCB);
 #endif // DEFINITIONS_H

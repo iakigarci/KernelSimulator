@@ -3,7 +3,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "thread.h"
+#include "definitions.h"
+#include "queue.h"
 
 /*----------------------------------------------------------------- 
  *   clock

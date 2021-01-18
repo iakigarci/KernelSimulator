@@ -9,21 +9,20 @@
 #include <math.h>
 
 #include "definitions.h"
+#include "queue.h"
+#include "thread.h"
+#include "mensajes.h"
+
+struct Queue *queue0_ptr, queue0;
+struct Queue *queue1_ptr, queue1;
+struct Queue *queue2_ptr, queue2;
+struct Queue *queue3_ptr, queue3;
 
 /** ---------------- **/
 
 // void *schedulerEvento(struct core_thread c_thread);
 
-void inicializar();
-void asignarPCB(struct PCB pPcb);
-void decrementarQuantumYEjecutar();
-void aumentarPrioridad();
-int todosHilosOcupados();
-void display_header();
-void guardarRegistros(struct core_thread *ptrCoreT);
-void volcarRegistros(struct core_thread *ptrCoreT);
-void ejecutarInstruccion(struct core_thread *ptrCoreT);
-void limpiarMarcos(struct PCB *ptrPCB);
+
 
 /*----------------------------------------------------------------- 
  *   main

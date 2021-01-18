@@ -2,7 +2,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "mensajes.h"
+#include "definitions.h"
+#include "queue.h"
 
 /*----------------------------------------------------------------- 
  *   mensajes
