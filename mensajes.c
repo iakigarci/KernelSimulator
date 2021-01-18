@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "definitions.h"
+#include "queue.h"
 
 /*----------------------------------------------------------------- 
  *   mensajes

@@ -13,16 +13,17 @@
 #include "thread.h"
 #include "mensajes.h"
 
+void inicializar();
+void asignarPCB(struct PCB pPcb);
+void decrementarQuantumYEjecutar();
+void aumentarPrioridad();
+int todosHilosOcupados();
+void display_header();
+void guardarRegistros(struct core_thread *ptrCoreT);
+void volcarRegistros(struct core_thread *ptrCoreT);
+void ejecutarInstruccion(struct core_thread *ptrCoreT);
+void limpiarMarcos(struct PCB *ptrPCB);
 
-// void *schedulerEvento(struct core_thread c_thread);
-
-
-/*----------------------------------------------------------------- 
- *   main
- * arg[1]	clockFrec
- * arg[2]	timerFrec
- * arg[3]	processFrec
- *----------------------------------------------------------------*/
 int main(int argc, char *argv[]) {
 	
 	printf("\n===========================================\n Inicio del programa de la asignatura de SO \n Creado por Iñaki García Noya \n===========================================\n");
@@ -78,9 +79,6 @@ int main(int argc, char *argv[]) {
         case 't':   /* -t or --timer */ 
             p2.tid=idtimer.tid;
 			p2.frec=atoi(optarg);
-            break; 
-        case 'p':   /* -p or --programs */ 
-            conf.how_many = atoi(optarg);
             break; 
 		case 'nCPU':   /* -p or --programs */ 
             #undef NUM_CPU

@@ -12,6 +12,11 @@
 #define TIMER_DEFAULT	100
 #define MEMORY_SIZE_DEFAULT	8
 
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h> 
+#include <stdbool.h>
+
 typedef struct { 
   pthread_t tid; 
 } identif_t; 
@@ -27,33 +32,33 @@ typedef struct mm {
 	long code;
 	long data;
 	long * pgb;
-}mm;
+} mm;
 
 typedef struct TLB {
 	long virtual;
 	long fisica;
-}TLB;
+} TLB;
 
 typedef struct pcb_status {
 	long arr_registr[16];
 	long IR;	// ultima instruccion
 	long PC;	// direccion de IR
-	TLB TLB;
-}pcb_status;
+	struct TLB TLB;
+} pcb_status;
 
 /** ESTRUCTURAS CPU **/
 typedef struct PCB {
 	int id;
 	int quantum;
 	int prioridad; // 0..3	
-	mm mm;
-	pcb_status pcb_status
-}PCB; 
+	struct mm mm;
+	struct pcb_status pcb_status
+} PCB; 
 
 typedef struct Queue { 
 	int front, rear, size; 
-	PCB arr_pcb[BUFFER_MAX]; 
-}Queue;  
+	struct PCB arr_pcb[BUFFER_MAX]; 
+} Queue;  
 
 typedef struct core_thread 
 {
@@ -72,39 +77,15 @@ typedef struct cpu
    core arr_core[NUM_CORE];
 } cpu_t;
 
-typedef struct configuration_t {
-    unsigned int  virtual_bits;
-    unsigned int  offset_bits;
-    unsigned int  offset_mask;
-    unsigned int  num_page_bits;
-    unsigned int  pages;
-    unsigned int  max_lines;
-    char		  *prog_name;
-    unsigned int  first_number;
-    unsigned int  how_many;
-} configuration_t;
-
 pthread_mutex_t mutexT, mutexC, mutexPCB;
-int clockTime, priorityTime, timer_flag;
-struct cpu arr_cpu[NUM_CPU];
-struct configuration_t conf;
 long * memoriaFisica;
 int sizeMemoria, marcosDisp, marcosMax;
+int clockTime, priorityTime, timer_flag;
+struct cpu arr_cpu[NUM_CPU];
 
 struct Queue *queue0_ptr, queue0;
 struct Queue *queue1_ptr, queue1;
 struct Queue *queue2_ptr, queue2;
 struct Queue *queue3_ptr, queue3;
 
-
-void inicializar();
-void asignarPCB(struct PCB pPcb);
-void decrementarQuantumYEjecutar();
-void aumentarPrioridad();
-int todosHilosOcupados();
-void display_header();
-void guardarRegistros(struct core_thread *ptrCoreT);
-void volcarRegistros(struct core_thread *ptrCoreT);
-void ejecutarInstruccion(struct core_thread *ptrCoreT);
-void limpiarMarcos(struct PCB *ptrPCB);
 #endif // DEFINITIONS_H
