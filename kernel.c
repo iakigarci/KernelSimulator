@@ -13,15 +13,8 @@
 #include "thread.h"
 #include "mensajes.h"
 
-struct Queue *queue0_ptr, queue0;
-struct Queue *queue1_ptr, queue1;
-struct Queue *queue2_ptr, queue2;
-struct Queue *queue3_ptr, queue3;
-
-/** ---------------- **/
 
 // void *schedulerEvento(struct core_thread c_thread);
-
 
 
 /*----------------------------------------------------------------- 
@@ -260,7 +253,7 @@ void decrementarQuantumYEjecutar() {
 void guardarRegistros(struct core_thread *ptrCoreT) {
 	for (int i = 0; i < 16; i++)
 	{
-		ptrCoreT->t_pcb.arr_registr[i] = ptrCoreT->arr_registr[i];
+		ptrCoreT->t_pcb.pcb_status.arr_registr[i] = ptrCoreT->arr_registr[i];
 		ptrCoreT->arr_registr[i] = 0;
 	}
 }
@@ -269,7 +262,7 @@ void guardarRegistros(struct core_thread *ptrCoreT) {
 void volcarRegistros(struct core_thread *ptrCoreT) {
 	for (int i = 0; i < 16; i++)
 	{
-		ptrCoreT->arr_registr[i] = ptrCoreT->t_pcb.arr_registr[i];
+		ptrCoreT->arr_registr[i] = ptrCoreT->t_pcb.pcb_status.arr_registr[i];
 	}
 }
 
@@ -310,24 +303,38 @@ int todosHilosOcupados() {
 
 void ejecutarInstruccion(struct core_thread *ptrCoreT) {  
 	
-	long instruccion = memoriaFisica[ptrCoreT->t_pcb.mm.pgb[0] + ptrCoreT->t_pcb.mm.code]; 
-	long codigo = instruccion & (0xF0000000) >> 28;
-	long registro = instruccion & (0x0F000000) >> 24;
-	long registro1 = instruccion & (0x00F00000) >> 20;
-	long registro2 = instruccion & (0x000F0000) >> 16;
-	long direccionAbsoluta = instruccion & (0x00FFFFFF);
-	ptrCoreT->t_pcb.mm.data++;
-
-	/* switch (codigo)
+	long instruccion = ptrCoreT->t_pcb.pcb_status.PC;
+	long codigo = (instruccion & (0xF0000000)) >> 28;				// 0,1,2,F
+	long registro = (instruccion & (0x0F000000)) >> 24;				// Primer registro	
+	long direccionAbsoluta = (instruccion & (0x00FFFFFF));			// Direccion virtual completa
+	long offset = (direccionAbsoluta & (0x0000FF));					// Offset de la direccion virtual
+	long direccionVirtual = (direccionAbsoluta & (0xFFFF00)) >> 8;	// Direccion virtual
+	
+	/*
+	if (codigo==0 || codigo==1)
 	{
-	case '0':	// ld (load)
+		long direccionFisicaAux;
+		if (ptrCoreT->t_pcb.pcb_status.TLB.virtual != direccionVirtual) // Actualizar TLB o no
+		{
+			direccionFisicaAux = ptrCoreT->t_pcb.mm.pgb[direccionVirtual];
+		}else{
+			direccionFisicaAux = ptrCoreT->t_pcb.pcb_status.TLB.fisica;
+		}
+		long direccionFisica = (direccionFisicaAux << 8) >> 24;
+		
+		if (codigo==0)	// ld
+		{
+			
+		}else{	// st
+
+		}
+		
 		ptrCoreT->arr_registr[registro] = 
-		break;
-	case '1':	// st 
-		
-		break;
+	}
+
 	case '2':	// add
-		
+		long registro1 = instruccion & (0x00F00000) >> 20;
+		long registro2 = instruccion & (0x000F0000) >> 16;
 		break;
 	case 'F':
 		// Se limpia el thread y los marcos
@@ -337,7 +344,8 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 	default:
 		mensaje_error("Codigo de instruccion incorrecto");
 		break;
-	}	 */
+	}	
+	*/ 
 }
 
 void limpiarMarcos(struct PCB *ptrPCB) {

@@ -65,7 +65,6 @@ int main(int argc, char *argv[]) {
             var_offset  = (rand() % data_size) << 2;
             sprintf(line,"0%1X%06X\n", reg1, data_start + var_offset); //ld
             fputs(line, fd);
-ç
             reg2 = (reg1 + 1) % 16;
             var_offset  = (((var_offset >> 2) + 1) % data_size) << 2;
             sprintf(line,"0%1X%06X\n", reg2, data_start + var_offset); // ld

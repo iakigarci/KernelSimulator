@@ -1,10 +1,10 @@
 
 OBJS	= kernel.o queue.o thread.o mensajes.o
 SOURCE	= kernel.c queue.c thread.c mensajes.c
-HEADER	= queue.h definitions.h thread.h mensajes.h 
+HEADER	= queue.h definitions.h thread.h mensajes.h declarations.h
 OUT	= kernel.out
 CC	 = gcc
-FLAGS	 = -g -c -Wall 
+FLAGS	 = -g -c 
 LFLAGS	 = -lpthread -lm
 # -g option enables debugging mode 
 # -c flag generates object code for separate files

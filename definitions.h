@@ -1,11 +1,6 @@
 #ifndef DEFINITIONS_H
 #define DEFINITIONS_H
 
-#include <pthread.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
 #define WAITING_TO_EXIT 15
@@ -34,24 +29,36 @@ typedef struct mm {
 	long * pgb;
 }mm;
 
+typedef struct TLB {
+	long virtual;
+	long fisica;
+}TLB;
+
+typedef struct pcb_status {
+	long arr_registr[16];
+	long IR;	// ultima instruccion
+	long PC;	// direccion de IR
+	TLB TLB;
+}pcb_status;
+
 /** ESTRUCTURAS CPU **/
 typedef struct PCB {
 	int id;
 	int quantum;
-	int prioridad; // 0..3
-	long arr_registr[16];
-	struct mm mm;
+	int prioridad; // 0..3	
+	mm mm;
+	pcb_status pcb_status
 }PCB; 
 
 typedef struct Queue { 
 	int front, rear, size; 
-	struct PCB arr_pcb[BUFFER_MAX]; 
+	PCB arr_pcb[BUFFER_MAX]; 
 }Queue;  
 
 typedef struct core_thread 
 {
 	bool is_process;
-	struct PCB t_pcb;
+	PCB t_pcb;
 	long arr_registr[16];
 } c_thread;
 
@@ -77,7 +84,6 @@ typedef struct configuration_t {
     unsigned int  how_many;
 } configuration_t;
 
-
 pthread_mutex_t mutexT, mutexC, mutexPCB;
 int clockTime, priorityTime, timer_flag;
 struct cpu arr_cpu[NUM_CPU];
@@ -85,6 +91,10 @@ struct configuration_t conf;
 long * memoriaFisica;
 int sizeMemoria, marcosDisp, marcosMax;
 
+struct Queue *queue0_ptr, queue0;
+struct Queue *queue1_ptr, queue1;
+struct Queue *queue2_ptr, queue2;
+struct Queue *queue3_ptr, queue3;
 
 
 void inicializar();
