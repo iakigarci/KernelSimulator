@@ -4,12 +4,10 @@
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
 #define WAITING_TO_EXIT 50
-#define NUM_CPU 		3
-#define NUM_CORE		2
-#define MAXTHREAD       5
 #define MAX_PCB			100
 #define CLOCK_DEFAULT	1
 #define TIMER_DEFAULT	1
+
 
 #include <pthread.h>
 #include <stdio.h>
@@ -68,19 +66,19 @@ typedef struct core_thread
 
 typedef struct cpu_core
 {
-   c_thread arr_th[MAXTHREAD];
+   c_thread arr_th;
 } core;
 
 typedef struct cpu
 {
-   core arr_core[NUM_CORE];
+   core arr_core;
 } cpu_t;
 
+struct cpu *arr_cpu;
 pthread_mutex_t mutexT, mutexC, mutexPCB, mutexMemoria;
 long * memoriaFisica;
 int sizeMemoria, marcosDisp, marcosMax;
 int clockTime, priorityTime, timer_flag;
-struct cpu arr_cpu[NUM_CPU];
 
 struct Queue *queue0_ptr, queue0;
 struct Queue *queue1_ptr, queue1;
