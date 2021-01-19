@@ -37,11 +37,11 @@ void *schedulerTiempo(void *arg);
 void *schedulerEvento(void *c_thread); 
 void *loader(void *arg);
 void printPCB(struct PCB* ptrPCB);
-
+void queuePCB(struct PCB pPCB);
 int MEMORY_SIZE_DEFAULT =	20;
-int NUM_CPU =				3;
-int NUM_CORE =				2;
-int MAXTHREAD =    			5;
+int NUM_CPU 		= 3;
+int NUM_CORE		= 3;
+int MAXTHREAD       = 3;
 
 int main(int argc, char *argv[]) {
 
@@ -128,8 +128,6 @@ int main(int argc, char *argv[]) {
 
 	//	Inicializacion de los parámetros que van a tener los hilos
 	
-	p3.tid=idloader.tid;
-	p3.frec=atoi(argv[3]);
 	printf("Clock: %d",idclock.tid);
 	printf("Timer: %d",idtimer.tid);
 	printf("Loader: %d",idloader.tid);
@@ -172,7 +170,6 @@ void display_header() {
 	// TODO, desplegar numero de programas
 } // ___display_header
 
-
 /*----------------------------------------------------------------- 
  *   inicializar
  *----------------------------------------------------------------*/
@@ -190,13 +187,21 @@ void inicializar() {
 	queue3_ptr = createQueue();
 
 	arr_cpu = malloc(sizeof(struct cpu)*NUM_CPU);
-
+	for (int i = 0; i < NUM_CPU; i++)
+	{
+		arr_cpu[i].arr_core = malloc(sizeof(struct cpu_core)*NUM_CORE);
+		for (int j = 0; j < NUM_CORE; j++)
+		{
+			arr_cpu[i].arr_core[j].arr_th = malloc(sizeof(struct core_thread)*MAXTHREAD);
+		}
+		
+	}
+	
 	marcosDisp = sizeMemoria / 256;
 	marcosMax = marcosDisp;
 	memoriaFisica = malloc(sizeof(long)*sizeMemoria);
 
 } // inicializar
-
 
 void asignarPCB(struct PCB pPcb) {
 	int i = 0;
@@ -629,131 +634,142 @@ void *timerScheduler(void *arg) {
  *   loader
  *----------------------------------------------------------------*/
 
-void *loader(void *arg) {
+void *loader(void *arg)
+{
 	struct parametros *ptr, p;
 	ptr = (struct parametros *)arg;
 	int frec = p.frec;
 	char path[21];
-	int idFichero=61;
+	int idFichero = 61;
 	char buffer[255];
 	bool salir = false;
 	while (1)
 	{
 		// Abrir carpeta y leer todos los ficheros
-		snprintf(path,21,"prometeo/prog%03d.elf",idFichero);
-		FILE * fichero = fopen(path,"r");
-		int nLineas=2;
-		while (fgets(buffer,120,fichero)!=NULL)	// Obtener nnumero de lineas
+		snprintf(path, 21, "prometeo/prog%03d.elf", idFichero);
+		FILE *fichero = fopen(path, "r");
+		int nLineas = 2;
+		while (fgets(buffer, 120, fichero) != NULL) // Obtener nnumero de lineas
 		{
 			nLineas++;
 		}
 		int nMarcos;
 		if (nLineas % 64 == 0) // Obtener marcos necesarios
 		{
-			nMarcos = nLineas / 64 ;
-		}else {
-			nMarcos = 1 + nLineas / 64 ;
+			nMarcos = nLineas / 64;
+		}
+		else
+		{
+			nMarcos = 1 + nLineas / 64;
 		}
 		salir = false;
-		while(!salir) {
+		while (!salir)
+		{
 			if (nMarcos <= marcosDisp)
 			{
 				salir = true;
 				struct PCB pcb;
 				//asignar prioridad y quantum
 				sleep(frec);
-				pcb.id=idFichero;
-				pcb.prioridad = rand() % (3+1-0) + 0;
-				pcb.quantum = rand() % (100+1-1) + 1;
-							
+				pcb.id = idFichero;
+				pcb.prioridad = rand() % (3 + 1 - 0) + 0;
+				pcb.quantum = rand() % (100 + 1 - 1) + 1;
+
 				// Se lee el ficher, inicializando mm de pcb y leyendo las lineas
 				rewind(fichero);
-				fgets(buffer,120,fichero); // Avanza uno
-				char * linea = strtok(buffer," "); // Separamos el texto
-				linea = strtok(NULL," ");
-				pcb.mm.code = strtol(linea,&linea,16);
-				fgets(buffer,120,fichero);
-				linea = strtok(buffer," "); // Separamos el texto
-				linea = strtok(NULL," ");
-				pcb.mm.data = strtol(linea,&linea,16);
+				fgets(buffer, 120, fichero);	   // Avanza uno
+				char *linea = strtok(buffer, " "); // Separamos el texto
+				linea = strtok(NULL, " ");
+				pcb.mm.code = strtol(linea, &linea, 16);
+				fgets(buffer, 120, fichero);
+				linea = strtok(buffer, " "); // Separamos el texto
+				linea = strtok(NULL, " ");
+				pcb.mm.data = strtol(linea, &linea, 16);
 
 				// Tabla de paginas
-				pcb.mm.pgb = malloc(sizeof(long)*nMarcos);
+				pcb.mm.pgb = malloc(sizeof(long) * nMarcos);
 				int pPGB = 0;
 				pthread_mutex_lock(&mutexMemoria);
-				for (int j = 0; j < sizeMemoria; j+=256)
+				for (int j = 0; j < sizeMemoria; j += 256)
 				{
-					if (memoriaFisica[j]==0)
+					if (memoriaFisica[j] == 0)
 					{
 						pcb.mm.pgb[pPGB] = j;
 						pPGB++;
-						memoriaFisica[j]=1;	// Se introduce valor basura
-						if (pPGB==nMarcos)
+						memoriaFisica[j] = 1; // Se introduce valor basura
+						if (pPGB == nMarcos)
 						{
 							break;
-						}	
+						}
 					}
 				}
 				long lineaLeida;
-				int nIns,pgbAct = 0;
+				int nIns, pgbAct = 0;
 				long posMemoria = pcb.mm.pgb[0];
-				fgets(buffer,120,fichero);
-				lineaLeida = strtol(buffer,NULL,16);
+				fgets(buffer, 120, fichero);
+				lineaLeida = strtol(buffer, NULL, 16);
 				pcb.pcb_status.PC = lineaLeida;
 				pcb.pcb_status.IR = pcb.mm.pgb[pgbAct];
-				long direccionAbsoluta = (lineaLeida & (0x00FFFFFF));			
+				long direccionAbsoluta = (lineaLeida & (0x00FFFFFF));
 				long direccionVirtual = (direccionAbsoluta & (0xFFFF00)) >> 8;
-				pcb.pcb_status.TLB.fisica=pcb.mm.pgb[0];
-				pcb.pcb_status.TLB.virtual=direccionVirtual;
+				pcb.pcb_status.TLB.fisica = pcb.mm.pgb[0];
+				pcb.pcb_status.TLB.virtual = direccionVirtual;
 
-				while (fgets(buffer,120,fichero)!=NULL)	// Se lee lineas desde la 3ra y se rellena memoria
+				while (fgets(buffer, 120, fichero) != NULL) // Se lee lineas desde la 3ra y se rellena memoria
 				{
-					if (nIns==63) // Marco lleno
+					if (nIns == 63) // Marco lleno
 					{
 						pgbAct++;
-						nIns=0;
+						nIns = 0;
 						posMemoria = pcb.mm.pgb[pgbAct];
 					}
-					
-					lineaLeida = strtol(buffer,NULL,16);
-					memoriaFisica[posMemoria]=lineaLeida;
-					posMemoria+=4;
+
+					lineaLeida = strtol(buffer, NULL, 16);
+					memoriaFisica[posMemoria] = lineaLeida;
+					posMemoria += 4;
 					nIns++;
 				}
 				pthread_mutex_unlock(&mutexMemoria);
 
 				printPCB(&pcb);
-				switch (pcb.prioridad)	// Se introduce el PCB en cola de prioridades
-				{
-					case 0:
-						enqueue(queue0_ptr,pcb);
-						break;
-					case 1:
-						enqueue(queue1_ptr,pcb);
-						break;
-					case 2:
-						enqueue(queue2_ptr,pcb);
-						break;
-					case 3:
-						enqueue(queue3_ptr,pcb);
-						break;
-					default:
-						break;
-				}
-			}else if (nMarcos>marcosMax)
+			}
+			else if (nMarcos > marcosMax)
 			{
-				printf("Programa con id [%d] es más grande que la memoria",idFichero);
-				salir=true;
-			}else{ // Esperar hasta que se liberen los marcos
+				printf("Programa con id [%d] es más grande que la memoria", idFichero);
+				salir = true;
+			}
+			else
+			{ // Esperar hasta que se liberen los marcos
 				sleep(15);
 			}
 		}
 		fclose(fichero);
 		idFichero++;
-		if (idFichero==75)
+		if (idFichero == 75)
 		{
 			break;
-		} sleep(2);
+		}
+		sleep(2);
+	}
+}
+
+void queuePCB(struct PCB pPCB) {
+	switch (pPCB.prioridad)	// Se introduce el PCB en cola de prioridades
+	{
+		case 0:
+			enqueue(queue0_ptr,pPCB);
+			break;
+		case 1:
+			enqueue(queue1_ptr,pPCB);
+			break;
+		case 2:
+			enqueue(queue2_ptr,pPCB);
+			break;
+		case 3:
+			enqueue(queue3_ptr,pPCB);
+			break;
+		default:
+			break;
 	}
 }
 

@@ -8,7 +8,6 @@
 #define CLOCK_DEFAULT	1
 #define TIMER_DEFAULT	1
 
-
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h> 
@@ -66,12 +65,12 @@ typedef struct core_thread
 
 typedef struct cpu_core
 {
-   c_thread arr_th;
+   c_thread *arr_th;
 } core;
 
 typedef struct cpu
 {
-   core arr_core;
+   core *arr_core;
 } cpu_t;
 
 struct cpu *arr_cpu;

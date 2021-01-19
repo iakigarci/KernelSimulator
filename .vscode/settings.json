@@ -6,6 +6,7 @@
         "chrono": "c",
         "algorithm": "c",
         "random": "c",
-        "thread": "c"
+        "thread": "c",
+        "ratio": "cpp"
     }
 }
