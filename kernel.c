@@ -76,18 +76,18 @@ int main(int argc, char *argv[]) {
                 "Frecuencia del timer [%d]\n", TIMER_DEFAULT);
 			printf ("  -h, --help\t\t"
 			"Ayuda\n");
-			printf ("  -nCPU"
+			printf ("  -p"
                 "Numero de CPU [%d]\n", NUM_CPU);
-            printf ("  -nC  --nCores=NNN\t"
+            printf ("  -n  --nCores=NNN\t"
                 "Numero de cores/nucleos [%d]\n", NUM_CORE);
-			printf ("  -nT  --nThreads=NNN\t"
+			printf ("  -h  --nThreads=NNN\t"
                 "Numero de threads/hilos [%d]\n", MAXTHREAD);
 			printf ("  -m  --memoria=NNN\t"
                 "Multiplicador de tamaño memoria físifca (2^m), mínimo 8[%d]\n", MEMORY_SIZE_DEFAULT);
             printf ("Ejemplos:\n");
-            printf ("  ./kernel -c100 -t100  -nCPU2 -C2 -nT4 -m8\n");
-            printf ("  ./kernel -nprog -f60 -l1000 -p1\n");
-            printf ("  ./kernel -nprog -f61 -l20   -p60\n");
+            printf ("  ./kernel -m 10 -p 10 -n 4\n");
+            printf ("  ./kernel -m 20\n");
+            printf ("  ./kernel -c 100 -f 10\n");
             exit (2);
         case 'c':   /* -c or --clock */ 
 			p1.tid=idclock.tid;
@@ -384,8 +384,8 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 		
 	}else if (codigo==2)	// add
 	{
-		long registro1 = instruccion & (0x00F00000) >> 20;
-		long registro2 = instruccion & (0x000F0000) >> 16;
+		long registro1 = (instruccion & 0x00F00000) >> 20;
+		long registro2 = (instruccion & 0x000F0000) >> 16;
 		ptrCoreT->arr_registr[registro] = ptrCoreT->arr_registr[registro1] + ptrCoreT->arr_registr[registro2];
 	}else if (codigo==15)	// exit
 	{
@@ -394,6 +394,7 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 	}else{
 		mensaje_error("Codigo de instruccion incorrecto");
 	}
+
 
 	printf("   > Codigo: %ld            			\n", codigo);
 	printf("   > Registro: %ld            			\n", registro);
