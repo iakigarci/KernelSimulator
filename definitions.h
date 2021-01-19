@@ -3,14 +3,13 @@
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 15
+#define WAITING_TO_EXIT 3
 #define NUM_CPU 		3
 #define NUM_CORE		2
 #define MAXTHREAD       5
 #define MAX_PCB			100
 #define CLOCK_DEFAULT	100
 #define TIMER_DEFAULT	100
-#define MEMORY_SIZE_DEFAULT	8
 
 #include <pthread.h>
 #include <stdio.h>
@@ -42,7 +41,7 @@ typedef struct TLB {
 typedef struct pcb_status {
 	long arr_registr[16];
 	long IR;	// ultima instruccion
-	long PC;	// direccion de IR
+	long PC;	// direccion virtual de IR
 	struct TLB TLB;
 } pcb_status;
 
@@ -52,7 +51,7 @@ typedef struct PCB {
 	int quantum;
 	int prioridad; // 0..3	
 	struct mm mm;
-	struct pcb_status pcb_status
+	struct pcb_status pcb_status;
 } PCB; 
 
 typedef struct Queue { 
@@ -77,7 +76,7 @@ typedef struct cpu
    core arr_core[NUM_CORE];
 } cpu_t;
 
-pthread_mutex_t mutexT, mutexC, mutexPCB;
+pthread_mutex_t mutexT, mutexC, mutexPCB, mutexMemoria;
 long * memoriaFisica;
 int sizeMemoria, marcosDisp, marcosMax;
 int clockTime, priorityTime, timer_flag;

@@ -1,7 +1,7 @@
 
-OBJS	= kernel.o 
-SOURCE	= kernel.c 
-HEADER	= definitions.h 
+OBJS	= kernel.o queue.o thread.o mensajes.o
+SOURCE	= kernel.c queue.c thread.c mensajes.c
+HEADER	= definitions.h queue.h thread.h mensajes.h
 OUT	= kernel.out
 CC	 = gcc
 FLAGS	 = -g -c -Wall
