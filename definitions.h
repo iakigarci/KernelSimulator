@@ -3,13 +3,13 @@
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 3
+#define WAITING_TO_EXIT 50
 #define NUM_CPU 		3
 #define NUM_CORE		2
 #define MAXTHREAD       5
 #define MAX_PCB			100
-#define CLOCK_DEFAULT	100
-#define TIMER_DEFAULT	100
+#define CLOCK_DEFAULT	1
+#define TIMER_DEFAULT	1
 
 #include <pthread.h>
 #include <stdio.h>

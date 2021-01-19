@@ -36,6 +36,7 @@ void *timerScheduler(void *arg);
 void *schedulerTiempo(void *arg);  
 void *schedulerEvento(void *c_thread); 
 void *loader(void *arg);
+void printPCB(struct PCB* ptrPCB);
 
 int MEMORY_SIZE_DEFAULT = 20;
 
@@ -123,27 +124,24 @@ int main(int argc, char *argv[]) {
     } 
 	
 	printf("\nFinalizando la config del programa\n");
-
 	display_header();
-	
 	sizeMemoria = pow(2.0,MEMORY_SIZE_DEFAULT); // 2^argumento
-
-	printf("\n Iniciando el programa...");
-	printf(".");
-
 	inicializar();
 
 	//	Inicializacion de los parámetros que van a tener los hilos
 	
 	p3.tid=idloader.tid;
 	p3.frec=atoi(argv[3]);
-
+	printf("Clock: %d",idclock.tid);
+	printf("Timer: %d",idtimer.tid);
+	printf("Loader: %d",idloader.tid);
+	printf("Scheduler: %d",idscheduler.tid);
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timerScheduler,(void *)&p2);
 	pthread_create(&(idloader.tid),NULL,loader,(void *)&p3);
 	pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
 
-	sleep(WAITING_TO_EXIT);
+	sleep(500);
 	printf("\nFinalizando ejecución del programa\n");
 	
 	imprimirEstructura();
@@ -156,7 +154,7 @@ void display_header() {
 	rawtime = time(NULL);
 	ptm = localtime(&rawtime);
 
-	printf("╔══════════════════════════════════════════════\n");
+	printf("╔══════════════════════════════════════════════╗\n");
 	printf("║  SE·SO          %02d/%02d/%04d  %02d:%02d \n",
 										ptm->tm_mday, 
 										ptm->tm_mon+1, 
@@ -170,8 +168,8 @@ void display_header() {
 	printf("║   Frecuencia del clock: %03d          	\n", CLOCK_DEFAULT);
 	printf("║   Frecuencia del timer: %03d         		\n", TIMER_DEFAULT);
 	printf("║   Tamaño de la memoria física: %d         \n", (int)pow(2,MEMORY_SIZE_DEFAULT));
-	printf("╚══════════════════════════════════════════════\n\n");
-	sleep(2);
+	printf("╚══════════════════════════════════════════════╝\n\n");
+	//sleep(2);
 
 	// TODO, desplegar numero de programas
 } // ___display_header
@@ -217,7 +215,7 @@ void asignarPCB(struct PCB pPcb) {
 				if(arr_cpu[i].arr_core[j].arr_th[k].is_process) { // Se mira si hay proceso
 					k++;
 				}else{
-					printf("Metido [%d] quantum [%d] en [%d][%d][%d]",pPcb.id,pPcb.quantum, i,j,k);
+					printf("[SCHEDULER] Metido [%d] quantum [%d] en [%d][%d][%d]",pPcb.id,pPcb.quantum, i,j,k);
 					arr_cpu[i].arr_core[j].arr_th[k].t_pcb = pPcb;
 					seguir = false;
 					arr_cpu[i].arr_core[j].arr_th[k].is_process = true;
@@ -241,7 +239,7 @@ void decrementarQuantumYEjecutar() {
 	int i = 0;
 	int j = 0;
 	int k = 0;
-	pthread_mutex_lock(&mutexPCB);
+	
 	while (i < NUM_CPU)
 	{
 		while (j < NUM_CORE)
@@ -250,6 +248,7 @@ void decrementarQuantumYEjecutar() {
 			{
 				if (arr_cpu[i].arr_core[j].arr_th[k].is_process)
 				{
+					pthread_mutex_lock(&mutexPCB);
 					if (arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum>0)
 					{
 						if (arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum==1)
@@ -260,8 +259,10 @@ void decrementarQuantumYEjecutar() {
 							guardarRegistros(&arr_cpu[i].arr_core[j].arr_th[k]);
 							enqueue(queue0_ptr,arr_cpu[i].arr_core[j].arr_th[k].t_pcb);	
 						}
+						ejecutarInstruccion(&arr_cpu[i].arr_core[j].arr_th[k]);
 						arr_cpu[i].arr_core[j].arr_th[k].t_pcb.quantum--;
 					}
+					pthread_mutex_unlock(&mutexPCB);
 				}
 				k++;
 			}
@@ -272,24 +273,27 @@ void decrementarQuantumYEjecutar() {
 		k=0;
 		i++;
 	}
-	pthread_mutex_unlock(&mutexPCB);
 }
 
 // guardan los registros del hilo en el pcb
 void guardarRegistros(struct core_thread *ptrCoreT) {
+	//pthread_mutex_lock(&mutexPCB);
 	for (int i = 0; i < 16; i++)
 	{
 		ptrCoreT->t_pcb.pcb_status.arr_registr[i] = ptrCoreT->arr_registr[i];
 		ptrCoreT->arr_registr[i] = 0;
 	}
+	//pthread_mutex_unlock(&mutexPCB);
 }
 
 // se vuelcan los registros del pcb en el hilo
 void volcarRegistros(struct core_thread *ptrCoreT) {
+	//pthread_mutex_lock(&mutexPCB);
 	for (int i = 0; i < 16; i++)
 	{
 		ptrCoreT->arr_registr[i] = ptrCoreT->t_pcb.pcb_status.arr_registr[i];
 	}
+	//pthread_mutex_unlock(&mutexPCB);
 }
 
 void aumentarPrioridad() { 
@@ -328,7 +332,7 @@ int todosHilosOcupados() {
 }
 
 void ejecutarInstruccion(struct core_thread *ptrCoreT) {  
-	
+	//pthread_mutex_lock(&mutexPCB);
 	long instruccion = ptrCoreT->t_pcb.pcb_status.PC;
 	long codigo = (instruccion & (0xF0000000)) >> 28;				// 0,1,2,F
 	long registro = (instruccion & (0x0F000000)) >> 24;				// Primer registro	
@@ -336,6 +340,25 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 	long offset = (direccionAbsoluta & (0x0000FF));					// Offset de la direccion virtual
 	long direccionVirtual = (direccionAbsoluta & (0xFFFF00)) >> 8;	// Direccion virtual
 	
+	printf("[INTRUCCION] %llx",instruccion);
+	printf("   > Registros previos: [ %llx | %llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |            \n",
+										ptrCoreT->t_pcb.pcb_status.arr_registr[0],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[1],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[2],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[3],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[4],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[5],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[6],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[7],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[8],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[9],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[10],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[11],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[12],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[13],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[15],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[16]
+	);
 
 	if (codigo==0 || codigo==1)
 	{
@@ -347,14 +370,14 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 			direccionFisicaAux = ptrCoreT->t_pcb.pcb_status.TLB.fisica;
 		}
 		long direccionFisica = (direccionFisicaAux) << 8;
-		pthread_mutex_lock(&mutexMemoria);
+		//pthread_mutex_lock(&mutexMemoria);
 		if (codigo==0)	// ld
 		{
 			ptrCoreT->arr_registr[registro] = memoriaFisica[direccionFisica + offset]; 
 		}else{	// st
 			memoriaFisica[direccionFisica+offset] = ptrCoreT->arr_registr[registro];
 		}	
-		pthread_mutex_unlock(&mutexMemoria);
+		//pthread_mutex_unlock(&mutexMemoria);
 	}else if (codigo==2)	// add
 	{
 		long registro1 = instruccion & (0x00F00000) >> 20;
@@ -368,21 +391,35 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 		mensaje_error("Codigo de instruccion incorrecto");
 	}
 
-	// case '2':	// add
-	// 	long registro1 = instruccion & (0x00F00000) >> 20;
-	// 	long registro2 = instruccion & (0x000F0000) >> 16;
-	// 	break;
-	// case 'F':
-	// 	// Se limpia el thread y los marcos
-	// 	ptrCoreT->is_process=false;
-	// 	limpiarMarcos(&ptrCoreT->t_pcb);
-	// 	break;
-	// default:
-	// 	break;
-	// }
+	
+	printf("   > Codigo: %ld            \n", codigo);
+	printf("   > Registro: %ld            \n", registro);
+	printf("   > Direccion Absoluta: %llx            \n", direccionAbsoluta);
+	printf("   > Direccion Virtual: %llx            \n", direccionVirtual);
+	printf("   > Offset: %llx            \n", offset);
+	printf("   > Registros: [ %llx | %llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |            \n",
+										ptrCoreT->t_pcb.pcb_status.arr_registr[0],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[1],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[2],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[3],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[4],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[5],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[6],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[7],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[8],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[9],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[10],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[11],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[12],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[13],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[15],
+										ptrCoreT->t_pcb.pcb_status.arr_registr[16]
+	);
+	//pthread_mutex_unlock(&mutexPCB);
 }
 
 void limpiarMarcos(struct PCB *ptrPCB) {
+	pthread_mutex_lock(&mutexPCB);
 	for (long i = 0; i < sizeof(ptrPCB->mm.pgb); i++)
 	{
 		long marco = ptrPCB->mm.pgb[i];
@@ -394,7 +431,7 @@ void limpiarMarcos(struct PCB *ptrPCB) {
 		}
 		marcosDisp--;
 	}
-	
+	pthread_mutex_unlock(&mutexPCB);
 }
 
 /*----------------------------------------------------------------- 
@@ -543,16 +580,16 @@ void *kernelClock(void *arg) {
 	ptr = (struct parametros *)arg;
 	int id = p.tid;
 	int frec = p.frec;
-	
+	printf("\n[CLOCK]: Iniciando...\n");
 	int count;
 	while(1) {
 		count++;
-		if (count == 100000*frec)
+		if (count == 100*frec)
 		{
 			count=0;
 			pthread_mutex_lock(&mutexC);
 			clockTime++;
-			//printf("  CLOCK[%d] \n", clockTime);
+			printf("\n[CLOCK]\n");
 			pthread_mutex_unlock(&mutexC);	
 			decrementarQuantumYEjecutar();
 		}
@@ -586,7 +623,6 @@ void *timerScheduler(void *arg) {
 			}
 		}
 		pthread_mutex_unlock(&mutexC);	
-		
 	}
 } 
 /*----------------------------------------------------------------- 
@@ -598,7 +634,7 @@ void *loader(void *arg) {
 	ptr = (struct parametros *)arg;
 	int frec = p.frec;
 	char path[21];
-	int idFichero=60;
+	int idFichero=61;
 	char buffer[255];
 	bool salir = false;
 	while (1)
@@ -684,7 +720,7 @@ void *loader(void *arg) {
 					nIns++;
 				}
 				pthread_mutex_unlock(&mutexMemoria);
-
+				printPCB(&pcb);
 				switch (pcb.prioridad)	// Se introduce el PCB en cola de prioridades
 				{
 					case 0:
@@ -702,8 +738,6 @@ void *loader(void *arg) {
 					default:
 						break;
 				}
-
-			printPCB(&pcb,path);
 			}else if (nMarcos>marcosMax)
 			{
 				printf("Programa con id [%d] es más grande que la memoria",idFichero);
@@ -714,15 +748,15 @@ void *loader(void *arg) {
 		}
 		fclose(fichero);
 		idFichero++;
-		if (idFichero==64)
+		if (idFichero==75)
 		{
 			break;
-		}
+		} sleep(2);
 	}
 }
 
-void printPCB(struct PCB* ptrPCB, char id) {
-	printf("\nIntroducido PCB: %02d\n",id);
+void printPCB(struct PCB* ptrPCB) {
+	printf("\n[LOADER]Introducido PCB: %s\n");
 	printf("   ├ ID: %03d            \n", ptrPCB->id);
 	printf("   ├ Prioridad: %01d            \n", ptrPCB->prioridad);
 	printf("   ├ Quantum: %03d            \n", ptrPCB->quantum);
