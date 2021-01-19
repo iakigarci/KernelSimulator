@@ -3,10 +3,10 @@
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 500
+#define WAITING_TO_EXIT 10
 #define MAX_PCB			100
-#define CLOCK_DEFAULT	1
-#define TIMER_DEFAULT	1
+#define CLOCK_DEFAULT	10
+#define TIMER_DEFAULT	10
 
 #include <pthread.h>
 #include <stdio.h>
@@ -40,7 +40,7 @@ typedef struct pcb_status {
 	long IR;	// ultima instruccion
 	long PC;	// direccion virtual de IR
 	struct TLB TLB;
-	
+
 } pcb_status;
 
 /** ESTRUCTURAS CPU **/
