@@ -39,9 +39,9 @@ void *loader(void *arg);
 void printPCB(struct PCB* ptrPCB);
 void queuePCB(struct PCB pPCB);
 int MEMORY_SIZE_DEFAULT =	20;
-int NUM_CPU 		= 3;
-int NUM_CORE		= 3;
-int MAXTHREAD       = 3;
+int NUM_CPU 		= 2;
+int NUM_CORE		= 4;
+int MAXTHREAD       = 4;
 
 int main(int argc, char *argv[]) {
 
@@ -125,19 +125,15 @@ int main(int argc, char *argv[]) {
 	display_header();
 	sizeMemoria = pow(2.0,MEMORY_SIZE_DEFAULT); // 2^argumento
 	inicializar();
-
+	p3.tid=idloader.tid;
 	//	Inicializacion de los parámetros que van a tener los hilos
 	
-	printf("Clock: %d",idclock.tid);
-	printf("Timer: %d",idtimer.tid);
-	printf("Loader: %d",idloader.tid);
-	printf("Scheduler: %d",idscheduler.tid);
 	pthread_create(&(idclock.tid),NULL,kernelClock,(void *)&p1);
 	pthread_create(&(idtimer.tid),NULL,timerScheduler,(void *)&p2);
 	pthread_create(&(idloader.tid),NULL,loader,(void *)&p3);
 	pthread_create(&(idscheduler.tid),NULL,schedulerTiempo,NULL);
 
-	sleep(500);
+	sleep(WAITING_TO_EXIT);
 	printf("\nFinalizando ejecución del programa\n");
 	
 	imprimirEstructura();
@@ -194,7 +190,6 @@ void inicializar() {
 		{
 			arr_cpu[i].arr_core[j].arr_th = malloc(sizeof(struct core_thread)*MAXTHREAD);
 		}
-		
 	}
 	
 	marcosDisp = sizeMemoria / 256;
@@ -337,30 +332,30 @@ int todosHilosOcupados() {
 void ejecutarInstruccion(struct core_thread *ptrCoreT) {  
 	//pthread_mutex_lock(&mutexPCB);
 	long instruccion = ptrCoreT->t_pcb.pcb_status.PC;
-	long codigo = (instruccion & (0xF0000000)) >> 28;				// 0,1,2,F
-	long registro = (instruccion & (0x0F000000)) >> 24;				// Primer registro	
-	long direccionAbsoluta = (instruccion & (0x00FFFFFF));			// Direccion virtual completa
-	long offset = (direccionAbsoluta & (0x0000FF));					// Offset de la direccion virtual
-	long direccionVirtual = (direccionAbsoluta & (0xFFFF00)) >> 8;	// Direccion virtual
+	long codigo = (instruccion & 0xF0000000) >> 28;				// 0,1,2,F
+	long registro = (instruccion & 0x0F000000) >> 24;				// Primer registro	
+	long direccionAbsoluta = (instruccion & 0x00FFFFFF);			// Direccion virtual completa
+	long offset = (direccionAbsoluta & 0x0000FF);					// Offset de la direccion virtual
+	long direccionVirtual = (direccionAbsoluta & 0xFFFF00) >> 8;	// Direccion virtual
 	
-	printf("[INTRUCCION] %llx",instruccion);
-	printf("   > Registros previos: [ %llx | %llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |            \n",
-										ptrCoreT->t_pcb.pcb_status.arr_registr[0],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[1],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[2],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[3],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[4],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[5],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[6],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[7],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[8],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[9],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[10],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[11],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[12],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[13],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[15],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[16]
+	printf("[INTRUCCION] %lx",instruccion);
+	printf("   > Registros previos: [ %lx | %lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |            \n",
+										ptrCoreT->arr_registr[0],
+										ptrCoreT->arr_registr[1],
+										ptrCoreT->arr_registr[2],
+										ptrCoreT->arr_registr[3],
+										ptrCoreT->arr_registr[4],
+										ptrCoreT->arr_registr[5],
+										ptrCoreT->arr_registr[6],
+										ptrCoreT->arr_registr[7],
+										ptrCoreT->arr_registr[8],
+										ptrCoreT->arr_registr[9],
+										ptrCoreT->arr_registr[10],
+										ptrCoreT->arr_registr[11],
+										ptrCoreT->arr_registr[12],
+										ptrCoreT->arr_registr[13],
+										ptrCoreT->arr_registr[14],
+										ptrCoreT->arr_registr[15]
 	);
 
 	if (codigo==0 || codigo==1)
@@ -370,19 +365,23 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 		{
 			direccionFisicaAux = ptrCoreT->t_pcb.mm.pgb[direccionVirtual];
 			ptrCoreT->t_pcb.pcb_status.TLB.virtual = direccionVirtual;
-			ptrCoreT->t_pcb.pcb_status.TLB.virtual = ptrCoreT->t_pcb.mm.pgb[direccionVirtual+1];
+			ptrCoreT->t_pcb.pcb_status.TLB.fisica = ptrCoreT->t_pcb.mm.pgb[direccionVirtual];
 		}else{
 			direccionFisicaAux = ptrCoreT->t_pcb.pcb_status.TLB.fisica;
 		}
 		long direccionFisica = (direccionFisicaAux) << 8;
-		pthread_mutex_lock(&mutexMemoria);
+		
 		if (codigo==0)	// ld
 		{
-			ptrCoreT->arr_registr[registro] = memoriaFisica[direccionFisica + offset]; 
+			pthread_mutex_lock(&mutexMemoria);
+			ptrCoreT->arr_registr[registro] = memoriaFisica[direccionFisica + offset];
+			pthread_mutex_unlock(&mutexMemoria); 
 		}else{	// st
+			pthread_mutex_lock(&mutexMemoria);
 			memoriaFisica[direccionFisica+offset] = ptrCoreT->arr_registr[registro];
+			pthread_mutex_unlock(&mutexMemoria);
 		}	
-		pthread_mutex_unlock(&mutexMemoria);
+		
 	}else if (codigo==2)	// add
 	{
 		long registro1 = instruccion & (0x00F00000) >> 20;
@@ -396,29 +395,28 @@ void ejecutarInstruccion(struct core_thread *ptrCoreT) {
 		mensaje_error("Codigo de instruccion incorrecto");
 	}
 
-	
 	printf("   > Codigo: %ld            			\n", codigo);
 	printf("   > Registro: %ld            			\n", registro);
-	printf("   > Direccion Absoluta: %llx           \n", direccionAbsoluta);
-	printf("   > Direccion Virtual: %llx            \n", direccionVirtual);
-	printf("   > Offset: %llx            			\n", offset);
-	printf("   > Registros: [ %llx | %llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |%llx |            \n",
-										ptrCoreT->t_pcb.pcb_status.arr_registr[0],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[1],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[2],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[3],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[4],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[5],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[6],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[7],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[8],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[9],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[10],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[11],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[12],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[13],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[15],
-										ptrCoreT->t_pcb.pcb_status.arr_registr[16]
+	printf("   > Direccion Absoluta: %lx           \n", direccionAbsoluta);
+	printf("   > Direccion Virtual: %lx            \n", direccionVirtual);
+	printf("   > Offset: %lx            			\n", offset);
+	printf("   > Registros: [ %lx | %lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |%lx |            \n",
+										ptrCoreT->arr_registr[0],
+										ptrCoreT->arr_registr[1],
+										ptrCoreT->arr_registr[2],
+										ptrCoreT->arr_registr[3],
+										ptrCoreT->arr_registr[4],
+										ptrCoreT->arr_registr[5],
+										ptrCoreT->arr_registr[6],
+										ptrCoreT->arr_registr[7],
+										ptrCoreT->arr_registr[8],
+										ptrCoreT->arr_registr[9],
+										ptrCoreT->arr_registr[10],
+										ptrCoreT->arr_registr[11],
+										ptrCoreT->arr_registr[12],
+										ptrCoreT->arr_registr[13],
+										ptrCoreT->arr_registr[14],
+										ptrCoreT->arr_registr[15]
 	);
 	//pthread_mutex_unlock(&mutexPCB);
 }
@@ -687,7 +685,7 @@ void *loader(void *arg)
 				pcb.mm.data = strtol(linea, &linea, 16);
 
 				// Tabla de paginas
-				pcb.mm.pgb = malloc(sizeof(long) * nMarcos);
+				pcb.mm.pgb = (long *)malloc(sizeof(long) * nMarcos);
 				int pPGB = 0;
 				pthread_mutex_lock(&mutexMemoria);
 				for (int j = 0; j < sizeMemoria; j += 256)
@@ -703,6 +701,7 @@ void *loader(void *arg)
 						}
 					}
 				}
+				
 				long lineaLeida;
 				int nIns, pgbAct = 0;
 				long posMemoria = pcb.mm.pgb[0];
@@ -710,11 +709,9 @@ void *loader(void *arg)
 				lineaLeida = strtol(buffer, NULL, 16);
 				pcb.pcb_status.PC = lineaLeida;
 				pcb.pcb_status.IR = pcb.mm.pgb[pgbAct];
-				long direccionAbsoluta = (lineaLeida & (0x00FFFFFF));
-				long direccionVirtual = (direccionAbsoluta & (0xFFFF00)) >> 8;
 				pcb.pcb_status.TLB.fisica = pcb.mm.pgb[0];
-				pcb.pcb_status.TLB.virtual = direccionVirtual;
-
+				pcb.pcb_status.TLB.virtual = 0x0;
+				
 				while (fgets(buffer, 120, fichero) != NULL) // Se lee lineas desde la 3ra y se rellena memoria
 				{
 					if (nIns == 63) // Marco lleno
@@ -730,8 +727,8 @@ void *loader(void *arg)
 					nIns++;
 				}
 				pthread_mutex_unlock(&mutexMemoria);
-
 				printPCB(&pcb);
+				queuePCB(pcb);
 			}
 			else if (nMarcos > marcosMax)
 			{
@@ -745,10 +742,7 @@ void *loader(void *arg)
 		}
 		fclose(fichero);
 		idFichero++;
-		if (idFichero == 75)
-		{
-			break;
-		}
+		
 		sleep(2);
 	}
 }
@@ -778,12 +772,12 @@ void printPCB(struct PCB* ptrPCB) {
 	printf("   ├ ID: %03d            \n", ptrPCB->id);
 	printf("   ├ Prioridad: %01d            \n", ptrPCB->prioridad);
 	printf("   ├ Quantum: %03d            \n", ptrPCB->quantum);
-	printf("   ├ IR: %llx            \n", ptrPCB->pcb_status.IR);
-	printf("   ├ PC: %llx            \n", ptrPCB->pcb_status.PC);
+	printf("   ├ IR: %lx            \n", ptrPCB->pcb_status.IR);
+	printf("   ├ PC: %lx            \n", ptrPCB->pcb_status.PC);
 	printf("   ├ TLB            \n");
 	printf("   	├ Virtual: %5d | Fisica: %5d         \n", ptrPCB->pcb_status.TLB.virtual,ptrPCB->pcb_status.TLB.fisica);
-	printf("   ├ Code: %llx        \n", ptrPCB->mm.code);
-	printf("   ├ Data: %llx          \n", ptrPCB->mm.data);
+	printf("   ├ Code: %lx        \n", ptrPCB->mm.code);
+	printf("   ├ Data: %lx          \n", ptrPCB->mm.data);
 	printf("   ├ PGB: %ld          \n", ptrPCB->mm.pgb[0]);
 }
 

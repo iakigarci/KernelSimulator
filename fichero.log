@@ -1,0 +1,248 @@
+
+Finalizando la config del programa
+╔══════════════════════════════════════════════╗
+║  SE·SO          19/01/2021  18:54 
+║       ☼☼☼ CPU de Iñaki García ☼☼☼      
+║   Numero de CPU: 003            			
+║   Numero de nucleos: 003            		
+║   Numero de hilos: 003            		
+║   Frecuencia del clock: 001          	
+║   Frecuencia del timer: 001         		
+║   Tamaño de la memoria física: 1048576         
+╚══════════════════════════════════════════════╝
+
+Inicializando estructuras...
+[CLOCK]: Iniciando...
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 061            
+   ├ Prioridad: 3            
+   ├ Quantum: 087            
+   ├ IR: 0            
+   ├ PC: 16000048            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:     0         
+   ├ Code: 0        
+   ├ Data: 24          
+   ├ PGB: 0          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 062            
+   ├ Prioridad: 1            
+   ├ Quantum: 016            
+   ├ IR: 200            
+   ├ PC: f00016c            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:   512         
+   ├ Code: 0        
+   ├ Data: a4          
+   ├ PGB: 512          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 063            
+   ├ Prioridad: 1            
+   ├ Quantum: 036            
+   ├ IR: 500            
+   ├ PC: 20000d0            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  1280         
+   ├ Code: 0        
+   ├ Data: 44          
+   ├ PGB: 1280          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 064            
+   ├ Prioridad: 2            
+   ├ Quantum: 093            
+   ├ IR: 700            
+   ├ PC: b4            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  1792         
+   ├ Code: 0        
+   ├ Data: a4          
+   ├ PGB: 1792          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 065            
+   ├ Prioridad: 1            
+   ├ Quantum: 022            
+   ├ IR: 900            
+   ├ PC: f00016c            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  2304         
+   ├ Code: 0        
+   ├ Data: 164          
+   ├ PGB: 2304          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 066            
+   ├ Prioridad: 2            
+   ├ Quantum: 028            
+   ├ IR: b00            
+   ├ PC: b000158            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  2816         
+   ├ Code: 0        
+   ├ Data: 14          
+   ├ PGB: 2816          
+
+[CLOCK]
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 067            
+   ├ Prioridad: 2            
+   ├ Quantum: 060            
+   ├ IR: d00            
+   ├ PC: 50001b4            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  3328         
+   ├ Code: 0        
+   ├ Data: 194          
+   ├ PGB: 3328          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 068            
+   ├ Prioridad: 3            
+   ├ Quantum: 027            
+   ├ IR: f00            
+   ├ PC: 50000b8            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  3840         
+   ├ Code: 0        
+   ├ Data: 44          
+   ├ PGB: 3840          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 069            
+   ├ Prioridad: 0            
+   ├ Quantum: 027            
+   ├ IR: 1100            
+   ├ PC: 8000230            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  4352         
+   ├ Code: 0        
+   ├ Data: 104          
+   ├ PGB: 4352          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 070            
+   ├ Prioridad: 0            
+   ├ Quantum: 037            
+   ├ IR: 1400            
+   ├ PC: 20000a8            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  5120         
+   ├ Code: 0        
+   ├ Data: 94          
+   ├ PGB: 5120          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 071            
+   ├ Prioridad: 3            
+   ├ Quantum: 069            
+   ├ IR: 1500            
+   ├ PC: d000170            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  5376         
+   ├ Code: 0        
+   ├ Data: d4          
+   ├ PGB: 5376          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 072            
+   ├ Prioridad: 3            
+   ├ Quantum: 030            
+   ├ IR: 1800            
+   ├ PC: 6000188            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  6144         
+   ├ Code: 0        
+   ├ Data: 114          
+   ├ PGB: 6144          
+
+[CLOCK]
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 073            
+   ├ Prioridad: 2            
+   ├ Quantum: 031            
+   ├ IR: 1b00            
+   ├ PC: c0000b8            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  6912         
+   ├ Code: 0        
+   ├ Data: 74          
+   ├ PGB: 6912          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 074            
+   ├ Prioridad: 2            
+   ├ Quantum: 024            
+   ├ IR: 1c00            
+   ├ PC: a0001ac            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  7168         
+   ├ Code: 0        
+   ├ Data: e4          
+   ├ PGB: 7168          
+
+[LOADER]Introducido PCB: (null)
+   ├ ID: 075            
+   ├ Prioridad: 3            
+   ├ Quantum: 036            
+   ├ IR: 1e00            
+   ├ PC: 8000094            
+   ├ TLB            
+   	├ Virtual:     0 | Fisica:  7680         
+   ├ Code: 0        
+   ├ Data: 94          
+   ├ PGB: 7680          
+
+Finalizando ejecución del programa
+Estructura 
+Número de CPU [3] 
+Número de CORE [3] 
+Número de thread [3] 
+CPU [0] 
+	 CORE [0] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+	 CORE [1] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+	 CORE [2] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+CPU [1] 
+	 CORE [0] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+	 CORE [1] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+	 CORE [2] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+CPU [2] 
+	 CORE [0] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+	 CORE [1] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+	 CORE [2] 
+	 	 T [0]	 	  PCB [0]|[0]|[0] 
+	 	 T [1]	 	  PCB [0]|[0]|[0] 
+	 	 T [2]	 	  PCB [0]|[0]|[0] 
+Queue[ 	] 
+Queue[ 	] 
+Queue[ 	] 
+Queue[ 	] 
