@@ -3,7 +3,7 @@
 
 #define DELAY_TIMER     5
 #define BUFFER_MAX      5
-#define WAITING_TO_EXIT 10
+#define WAITING_TO_EXIT 600
 #define MAX_PCB			100
 #define CLOCK_DEFAULT	10
 #define TIMER_DEFAULT	10

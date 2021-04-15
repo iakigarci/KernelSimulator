@@ -38,7 +38,7 @@ void *schedulerEvento(void *c_thread);
 void *loader(void *arg);
 void printPCB(struct PCB* ptrPCB);
 void queuePCB(struct PCB pPCB);
-int MEMORY_SIZE_DEFAULT =	11;
+int MEMORY_SIZE_DEFAULT = 20;
 int NUM_CPU 		= 2;
 int NUM_CORE		= 4;
 int MAXTHREAD       = 4;
@@ -160,6 +160,7 @@ void display_header() {
 	printf("║   Frecuencia del clock: %03d          	\n", CLOCK_DEFAULT);
 	printf("║   Frecuencia del timer: %03d         		\n", TIMER_DEFAULT);
 	printf("║   Tamaño de la memoria física: %d         \n", (int)pow(2,MEMORY_SIZE_DEFAULT));
+	printf("║   Tiempo de espera del programa: %d       \n", WAITING_TO_EXIT);
 	printf("╚══════════════════════════════════════════════╝\n\n");
 	//sleep(2);
 
@@ -742,6 +743,7 @@ void *loader(void *arg)
 						nIns++;
 					}
 					pthread_mutex_unlock(&mutexMemoria);
+					printf("\n[LOADER]Introducido PCB: prog%03d.elf\n",idFichero);
 					printPCB(&pcb);
 					queuePCB(pcb);
 				}
@@ -752,7 +754,8 @@ void *loader(void *arg)
 				}
 				else
 				{ // Esperar hasta que se liberen los marcos
-					sleep(15);
+					printf("[LOADER] Esperando a que se liberen los marcos...");
+					sleep(5);
 				}
 			}
 			fclose(fichero);
@@ -784,7 +787,6 @@ void queuePCB(struct PCB pPCB) {
 }
 
 void printPCB(struct PCB* ptrPCB) {
-	printf("\n[LOADER]Introducido PCB: %s\n");
 	printf("   ├ ID: %03d            \n", ptrPCB->id);
 	printf("   ├ Prioridad: %01d            \n", ptrPCB->prioridad);
 	printf("   ├ Quantum: %03d            \n", ptrPCB->quantum);
