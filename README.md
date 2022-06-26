@@ -3,12 +3,11 @@
 <br />
 <div align="center">
 
-  <h1 align="center">Best-README-Template</h1>
+  <h1 align="center">Kernel simulator</h1>
 
   <p align="center">
-    An awesome README template to jumpstart your projects!
+    Simulation of some kernel functions coded in C
     <br />
-    <a href="https://github.com/othneildrew/Best-README-Template"><strong>Explore the docs »</strong></a>
     <!--<br />
     <br />
     <a href="https://github.com/othneildrew/Best-README-Template">View Demo</a>
@@ -47,7 +46,6 @@
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
@@ -56,10 +54,19 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[!alt text]()
+<p align="center">
+    <img src="kernel_example.PNG">
+</p>
+
+The objective of this program is to simulate some of the functionalities that a kernel has to manage an operating system. For this purpose, the following functionalities have been developed
+
+- Simulate a _Scheduler_ and a _Dispatcher_ with a defined rules
+- Simulate virtual memory manager
+- Simulate physical memory manager
+
+All the functionalities have been implement using advanced eficent features, such pointers, memory allocation and multithreading. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
 
 
 ### Built With
@@ -80,7 +87,7 @@ The technologies used for this project are as follows:
 <!-- React <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="40" height="40"/>-->
 <!-- Mongo <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" width="40" height="40"/>-->
 <!-- PYTHON <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="40" height="40"/>-->
-<!--  <img src="" width="40" height="40"/>-->
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg" width="40" height="40"/>
 <!--  <img src="" width="40" height="40"/>-->
 <!--  <img src="" width="40" height="40"/>-->
 <!--  <img src="" width="40" height="40"/>-->
@@ -97,28 +104,32 @@ The technologies used for this project are as follows:
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
+Is mandatory to have installed C program an the _make_ package. To avoid errors during runtime, use Linux instead Windows. The following examples are for Ubuntu distribution:
+* c
   ```sh
-  npm install npm@latest -g
+  sudo apt install GCC
   ```
-
 ### Installation
 
-_Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't rely on any external dependencies or services._
-
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
+1. Clone the repo
    ```sh
-   git clone https://github.com/your_username_/Project-Name.git
+   git clone https://github.com/iakigarci/KernelSimulator.git
    ```
-3. Install NPM packages
+2. Install C packages
    ```sh
-   npm install
+   sudo apt install make
    ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
+3. Compile source files
+   ```sh
+   make
+   ```
+4. Run the init script. Change the parameters name with the simulation parameters
+   ```sh
+   ./kernel clockFrequency timerFrequency processGenFrequency
+   ```
+   For example:
+   ```sh
+   ./kernel 10 10 10
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -128,9 +139,39 @@ _Below is an example of how you can instruct your audience on installing and set
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+As we have seen in the previous section, the execution of the program has been simplified with a MAKEFILE file. The MAKEFILE parameters are:
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+```sh
+OBJS	= kernel.o 
+SOURCE	= kernel.c 
+HEADER	= definitions.h 
+OUT	= kernel.out
+CC	 = gcc
+FLAGS	 = -g -c -Wall
+LFLAGS	 = -lpthread -lm
+
+all: $(OBJS)
+	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
+
+
+kernel.o: kernel.c
+	$(CC) $(FLAGS) kernel.c 
+
+queue.o: queue.c
+	$(CC) $(FLAGS) queue.c 
+
+thread.o: thread.c
+	$(CC) $(FLAGS) thread.c 
+
+mensajes.o: mensajes.c
+	$(CC) $(FLAGS) mensajes.c 
+
+clean:
+	rm -f $(OBJS) $(OUT)
+```
+
+
+_For more examples, please refer to the [Documentation](Proyecto_SO_IGarcia.pdf) (Spanish)_
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -185,20 +226,11 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Iñaki García : i.garcia.noya@gmail.com
 
-Project Link: [https://github.com/iakigarci/repo_name](https://github.com/iakigarci/repo_name)
+Project Link: [https://github.com/iakigarci/KernelSimulator](https://github.com/iakigarci/KernelSimulator)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-During this project, knowledge has been acquired that will be important for the future. Listed here are the resources that have been used in order to successfully complete this project:
-
-* [Choose an Open Source License](https://choosealicense.com)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- CONTRIBUTORS -->
 <!--
